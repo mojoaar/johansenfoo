@@ -5,19 +5,23 @@ exposes a bcrypt-protected admin surface for editing it.
 
 ## Features
 
-- Public landing page, `/me` JSON profile, `robots.txt` and `sitemap.xml`, all rendered from SQLite
-  on each request, plus a static `/health` liveness response.
-- Content seeded from the original static site so day one matches byte for byte: profile, social
-  links, projects, experience, skills and the `johansen` theme.
+- Public landing page, `/me` JSON profile, `robots.txt` and `sitemap.xml`, served from an in-memory
+  snapshot of the content stored in SQLite, plus a static `/health` liveness response.
+- Content seeded from the original static site: profile, social links, projects, experience, skills
+  and the `johansen` theme. The seed is close to, but not byte-identical with, the legacy export:
+  some project wording follows the page copy rather than the legacy `me` file, and the ported markup
+  differs slightly.
 - A small in-memory content snapshot, reloaded after every admin write, so edits appear on the next
   page load without a restart.
 - Admin surface at `/admin`: bcrypt password setup, login, logout and session cookies.
-- HTMX-driven CRUD for the profile, social links, projects, experience and skills.
+- CRUD for the profile, social links, projects, experience and skills, using plain POST forms (HTMX
+  is vendored and loaded but not yet used).
 - Password change and regenerable API key management at `/admin/security`.
 - CSRF protection on stateful requests, a login rate limiter, and hourly pruning of expired
   sessions.
-- No third-party origins on the critical path: icons are rendered as inline SVG, JetBrains Mono is
-  self-hosted, and HTMX is vendored at `/static/htmx.min.js`.
+- No third-party origins on the critical path other than the Umami analytics snippet: icons are
+  rendered as inline SVG, JetBrains Mono is self-hosted, and HTMX is vendored at
+  `/static/htmx.min.js`.
 
 ## Admin
 
@@ -29,7 +33,7 @@ The site is edited through `/admin`, which does not exist until you create a pas
 
 Every write on an admin page reloads the content snapshot, so a change is visible on the public
 site on the next page load. `/admin/security` changes the password and generates the API key that
-the REST API and MCP server use (`Authorization: Bearer <key>`).
+the planned REST API and MCP server will use (`Authorization: Bearer <key>`).
 
 ## Build and run
 

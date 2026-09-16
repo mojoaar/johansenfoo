@@ -7,7 +7,7 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 - Admin surface at `/admin` with bcrypt password setup, login, logout and session cookies.
-- HTMX-driven CRUD for the profile, social links, projects, experience and skills.
+- CRUD for the profile, social links, projects, experience and skills.
 - Password change and regenerable API key management at `/admin/security`.
 - CSRF protection on stateful requests and a login rate limiter.
 - Session table with hourly pruning of expired sessions.
@@ -18,6 +18,8 @@ All notable changes to this project are documented here. The format follows
 - Static assets reject directory listings.
 
 ## [0.1.0] - 2026-09-16
+
+No git tag exists for this version yet; the date records when this work landed.
 
 ### Added
 - Public site rendered from SQLite: landing page, `/me`, `robots.txt`, `sitemap.xml` and `/health`.

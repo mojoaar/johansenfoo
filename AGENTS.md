@@ -17,8 +17,8 @@ CGO_ENABLED=0 go run ./cmd/johansenfoo -data=/tmp/jf   # run against a scratch d
 - Module `github.com/mojoaar/johansenfoo`, Go 1.25.5, must build and test with `CGO_ENABLED=0`.
 - No third-party origin on the runtime critical path other than the Umami snippet. HTMX is vendored
   at `/static/htmx.min.js`; no CDN scripts or fonts.
-- Migrations are append-only: `0001`-`0005` stay byte-identical. Add the next free number only when
-  required.
+- Migrations are append-only: `0001`-`0004` stay byte-identical. Add the next free number (`0006`)
+  only when required.
 - All timestamps are RFC 3339 UTC via `strftime('%Y-%m-%dT%H:%M:%SZ','now')`, never `datetime('now')`.
 - All SQL is parameterized.
 - `<html>` carries `data-theme="<slug>"` and `data-mode="light|dark"` as separate axes.
@@ -62,28 +62,29 @@ internal/web/static/        embedded style.css, admin.css, fonts, htmx, favicons
 Public routes: `GET /`, `GET /me`, `GET /robots.txt`, `GET /sitemap.xml`, `GET /health`,
 `GET|POST /setup`, `GET|POST /login`, `POST /logout`.
 
-Admin routes (all behind authMiddleware, HTMX-driven forms):
+Admin routes (all behind authMiddleware; the templates post plain forms, and the PUT/DELETE
+variants are reachable via the `_method` override):
 
 ```
   GET  /admin                  dashboard
-  GET  /admin/profile          POST /admin/profile
+  GET  /admin/profile          POST|PUT /admin/profile
   GET  /admin/social           POST /admin/social
-                               POST /admin/social/{id}
-                               POST /admin/social/{id}/delete
+                               POST|PUT /admin/social/{id}
+                               POST|DELETE /admin/social/{id}/delete
   GET  /admin/projects         POST /admin/projects
   GET  /admin/projects/new
-  GET  /admin/projects/{id}    POST /admin/projects/{id}
-                               POST /admin/projects/{id}/delete
+  GET  /admin/projects/{id}    POST|PUT /admin/projects/{id}
+                               POST|DELETE /admin/projects/{id}/delete
   GET  /admin/experience       POST /admin/experience
   GET  /admin/experience/new
-  GET  /admin/experience/{id}  POST /admin/experience/{id}
-                               POST /admin/experience/{id}/delete
+  GET  /admin/experience/{id}  POST|PUT /admin/experience/{id}
+                               POST|DELETE /admin/experience/{id}/delete
   GET  /admin/skills           POST /admin/skills
-                               POST /admin/skills/{id}
-                               POST /admin/skills/{id}/delete
+                               POST|PUT /admin/skills/{id}
+                               POST|DELETE /admin/skills/{id}/delete
   GET  /admin/security
-                               POST /admin/security/password
-                               POST /admin/security/apikey
+                               POST|PUT /admin/security/password
+                               POST|PUT /admin/security/apikey
 Auth routes: GET|POST /setup, GET|POST /login, POST /logout
 ```
 
