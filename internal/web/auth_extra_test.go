@@ -1,6 +1,7 @@
 package web
 
 import (
+	"crypto/tls"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -63,6 +64,33 @@ func TestExpiredSessionIsRejected(t *testing.T) {
 	}
 	if loc := rec.Header().Get("Location"); loc != "/login" {
 		t.Errorf("Location = %q, want %q", loc, "/login")
+	}
+}
+
+func TestValidSessionReachesAdmin(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newAuthTestHandler(t, d, store)
+
+	id := randomToken()
+	if err := db.NewSessionRepo(d).Create(id, time.Now().UTC().Add(time.Hour)); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/admin", nil)
+	req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: id})
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", rec.Code, http.StatusOK, rec.Body.String())
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "<h1>Dashboard</h1>") {
+		t.Errorf("body does not contain the dashboard heading: %s", body)
+	}
+	if !strings.Contains(body, `href="/logout"`) {
+		t.Errorf("body does not contain the sign-out link: %s", body)
 	}
 }
 
@@ -151,6 +179,15 @@ func TestLoginRateLimitBlocksExtraAttempts(t *testing.T) {
 	}
 }
 
+func TestSecureRequestTLSBranch(t *testing.T) {
+	if !secureRequest(&http.Request{TLS: &tls.ConnectionState{}}) {
+		t.Error("secureRequest = false for a request carrying TLS state, want true")
+	}
+	if !secureRequest(&http.Request{Header: http.Header{"X-Forwarded-Proto": {"https"}}}) {
+		t.Error("secureRequest = false for an X-Forwarded-Proto: https request, want true")
+	}
+}
+
 func TestSessionCookieAttributes(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -165,7 +202,10 @@ func TestSessionCookieAttributes(t *testing.T) {
 			store, _ := NewContentStore(d)
 			h := newAuthTestHandler(t, d, store)
 
-			form := url.Values{"password": {"correct horse battery staple"}}
+			form := url.Values{
+				"password":         {"correct horse battery staple"},
+				"password_confirm": {"correct horse battery staple"},
+			}
 			req := authTestPost("/setup", form, "")
 			if tc.secure {
 				req.Header.Set("X-Forwarded-Proto", "https")

@@ -76,6 +76,7 @@ func TestSetupRejectsShortPassword(t *testing.T) {
 }
 
 func TestLoginRejectsWrongPassword(t *testing.T) {
+	resetLoginLimiter(t)
 	d := newTestDB(t)
 	hash, err := bcrypt.GenerateFromPassword([]byte("right-password"), bcrypt.MinCost)
 	if err != nil {
@@ -104,6 +105,7 @@ func TestLoginRejectsWrongPassword(t *testing.T) {
 }
 
 func TestLoginSucceedsAndSeedsSession(t *testing.T) {
+	resetLoginLimiter(t)
 	d := newTestDB(t)
 	hash, err := bcrypt.GenerateFromPassword([]byte("right-password"), bcrypt.MinCost)
 	if err != nil {
