@@ -4,6 +4,7 @@ go 1.25.5
 
 require (
 	github.com/go-chi/chi/v5 v5.3.1
+	github.com/yuin/goldmark v1.7.13
 	modernc.org/sqlite v1.55.0
 )
 

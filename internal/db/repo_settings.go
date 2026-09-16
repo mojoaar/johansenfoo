@@ -28,3 +28,21 @@ func (r *SettingsRepo) GetBool(key string) (bool, error) {
 	}
 	return strconv.ParseBool(v)
 }
+
+func (r *SettingsRepo) All() (map[string]string, error) {
+	rows, err := r.db.Query(`SELECT key, value FROM settings`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make(map[string]string)
+	for rows.Next() {
+		var k, v string
+		if err := rows.Scan(&k, &v); err != nil {
+			return nil, err
+		}
+		out[k] = v
+	}
+	return out, rows.Err()
+}

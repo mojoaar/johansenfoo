@@ -3,17 +3,37 @@ package web
 import (
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/mojoaar/johansenfoo/internal/config"
+	"github.com/mojoaar/johansenfoo/internal/db"
 )
 
 func newTestHandler(t *testing.T) http.Handler {
 	t.Helper()
+
+	path := filepath.Join(t.TempDir(), "test.db")
+	d, err := db.Open(path)
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	t.Cleanup(func() { _ = d.Close() })
+	if err := db.Migrate(d); err != nil {
+		t.Fatalf("db.Migrate: %v", err)
+	}
+
+	content, err := loadContent(d)
+	if err != nil {
+		t.Fatalf("loadContent: %v", err)
+	}
+
 	return New(Deps{
+		DB:      d,
 		Cfg:     &config.Config{Port: 8080, BaseURL: "https://johansen.foo"},
+		Content: content,
 		Version: "test",
 		Started: time.Now(),
 	})

@@ -570,3 +570,10 @@ footer code {
     border-radius: 4px;
     padding: 0.1rem 0.4rem;
 }
+
+/* ─── Inline SVG icons ──────────────────────────────────────────── */
+.hero-social a svg,
+.project-link-icon svg {
+    width: 1em;
+    height: 1em;
+}

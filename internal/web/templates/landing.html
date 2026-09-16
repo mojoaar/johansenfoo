@@ -1,0 +1,156 @@
+{{define "content"}}
+        <nav aria-label="Main navigation">
+            <a href="#home" class="nav-logo">johansen.foo</a>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="navLinks">&#9776;</button>
+            <ul class="nav-links" id="navLinks" role="list">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#projects">Projects</a></li>
+                <li><a href="#about">About</a></li>
+                <li>
+                    <button class="theme-toggle" id="themeToggle" aria-label="Toggle colour scheme" title="Toggle light/dark mode">
+                        <span class="toggle-icon moon" aria-hidden="true">🌙</span>
+                        <span class="toggle-icon sun" aria-hidden="true">☀️</span>
+                    </button>
+                </li>
+            </ul>
+        </nav>
+
+        <section class="hero" id="home">
+            <div class="container">
+                <img src="/static/avatar.png" alt="{{.Profile.Name}}" class="hero-avatar" />
+                <h1 class="hero-name">{{.Profile.Name}}</h1>
+                <p class="hero-title">{{.Profile.Tagline}}</p>
+                <div class="hero-bio">{{.HeroBio}}</div>
+                <div class="hero-social">
+                    {{range .Social}}
+                    <a href="{{.URL}}" target="_blank" rel="noopener noreferrer" aria-label="{{.Label}}" class="social-{{.Platform}}">{{icon .Platform ""}}</a>
+                    {{end}}
+                </div>
+            </div>
+        </section>
+
+        <section id="projects">
+            <div class="container">
+                <p class="section-label">// projects</p>
+                <h2 class="section-title">Things I've built</h2>
+                <p class="section-desc">
+                    A couple of side projects that live under the
+                    <code class="inline-code">johansen.foo</code> umbrella.
+                </p>
+
+                <div class="projects-grid">
+                    {{range .Projects}}
+                    {{if .IsLink}}
+                    <a href="{{.URL}}" target="_blank" rel="noopener noreferrer" class="project-card is-link">
+                    {{else}}
+                    <div class="project-card">
+                    {{end}}
+                        <div class="project-card-header">
+                            <span class="project-name">{{icon .Icon "project-icon"}} {{.Name}}</span>
+                            <span class="project-link-icon">{{if .IsLink}}{{icon "arrow-up-right-from-square" ""}}{{else}}{{icon "server" ""}}{{end}}</span>
+                        </div>
+                        <p class="project-desc">{{.Description}}</p>
+                        <span class="project-url"{{if not .IsLink}} style="cursor: default"{{end}}>{{.URLLabel}}</span>
+                    {{if .IsLink}}
+                    </a>
+                    {{else}}
+                    </div>
+                    {{end}}
+                    {{end}}
+                </div>
+            </div>
+        </section>
+
+        <section id="about">
+            <div class="container">
+                <p class="section-label">// about</p>
+                <h2 class="section-title">About me</h2>
+                <div class="about-inner">
+                    <img src="/static/avatar.png" alt="{{.Profile.Name}}" class="about-photo" />
+                    <div class="about-content">
+                        <div class="about-meta">
+                            <span>age</span>
+                            <span class="meta-val" id="age">-</span>
+                            <span>based in</span>
+                            <span class="meta-val">{{.Profile.Location}}</span>
+                            <span>handle</span>
+                            <span class="meta-val">@{{.Profile.Handle}}</span>
+                        </div>
+                        <div>{{.AboutPara1}}</div>
+                        <div>{{.AboutPara2}}</div>
+
+                        <p class="about-subheading" style="margin-top: 1.5rem">// experience</p>
+                        <div class="timeline">
+                            {{range .Experience}}
+                            <div class="tl-row">
+                                <span class="tl-years">{{.Years}}</span>
+                                <span class="tl-role">{{.Role}} {{icon .Icon "tl-icon"}}</span>
+                                <span class="tl-company">{{.Company}}</span>
+                            </div>
+                            {{end}}
+                        </div>
+
+                        <p class="about-subheading">// skills</p>
+                        <div class="skills-list">
+                            {{range .Skills}}<span class="skill-tag">{{.Name}}</span>{{end}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>
+                johansen.foo &mdash; query
+                <a href="/me"><code>GET /me</code></a>
+                for JSON &mdash;
+                <a href="https://github.com/mojoaar" target="_blank" rel="noopener noreferrer">github.com/mojoaar</a>
+            </p>
+        </footer>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const toggle = document.getElementById("themeToggle");
+                toggle.addEventListener("click", () => {
+                    const current = document.documentElement.getAttribute("data-mode");
+                    const next = current === "light" ? "dark" : "light";
+                    document.documentElement.setAttribute("data-mode", next);
+                    localStorage.setItem("mode", next);
+                });
+
+                const hamburger = document.getElementById("hamburger");
+                const navLinks = document.getElementById("navLinks");
+
+                hamburger.addEventListener("click", () => {
+                    const open = navLinks.classList.toggle("open");
+                    hamburger.setAttribute("aria-expanded", open);
+                });
+
+                navLinks.querySelectorAll("a").forEach((link) => {
+                    link.addEventListener("click", () => {
+                        navLinks.classList.remove("open");
+                        hamburger.setAttribute("aria-expanded", "false");
+                    });
+                });
+
+                const dob = new Date("{{.Profile.DOB}}");
+                const now = new Date();
+                let age = now.getFullYear() - dob.getFullYear();
+                const m = now.getMonth() - dob.getMonth();
+                if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
+                document.getElementById("age").textContent = age;
+
+                function equalizeCards() {
+                    const cards = document.querySelectorAll(".project-card");
+                    cards.forEach((c) => (c.style.height = "auto"));
+                    let max = 0;
+                    cards.forEach((c) => {
+                        max = Math.max(max, c.offsetHeight);
+                    });
+                    cards.forEach((c) => (c.style.height = max + "px"));
+                }
+                equalizeCards();
+                window.addEventListener("resize", equalizeCards);
+            });
+        </script>
+{{end}}
