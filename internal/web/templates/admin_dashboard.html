@@ -1,0 +1,17 @@
+{{define "admin_dashboard"}}<!doctype html>
+<html lang="en" data-theme="{{.ThemeSlug}}" data-mode="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>{{.Title}} · johansen.foo</title>
+  <link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+  <main>
+    <h1>Dashboard</h1>
+    <p><a href="/logout">Sign out</a></p>
+  </main>
+</body>
+</html>
+{{end}}

@@ -27,6 +27,7 @@ func New(d Deps) http.Handler {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(securityHeaders)
+	r.Use(csrfMiddleware)
 	r.Use(middleware.Timeout(30 * time.Second))
 
 	static, err := staticHandler()
@@ -40,6 +41,17 @@ func New(d Deps) http.Handler {
 	r.Get("/robots.txt", robotsHandler(d))
 	r.Get("/sitemap.xml", sitemapHandler(d))
 	r.Get("/health", healthHandler(d))
+
+	r.Get("/setup", setupHandler(d))
+	r.Post("/setup", setupHandler(d))
+	r.Get("/login", loginHandler(d))
+	r.Post("/login", loginHandler(d))
+	r.Post("/logout", logoutHandler(d))
+
+	r.Route("/admin", func(ar chi.Router) {
+		ar.Use(authMiddleware(d))
+		ar.Get("/", adminDashboardHandler(d))
+	})
 
 	return r
 }

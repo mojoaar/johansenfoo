@@ -1,0 +1,23 @@
+{{define "admin_login"}}<!doctype html>
+<html lang="en" data-theme="{{.ThemeSlug}}" data-mode="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>{{.Title}} · johansen.foo</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/admin.css">
+</head>
+<body class="auth-body">
+  <main class="auth-card">
+    <h1>Sign in</h1>
+    {{if .Error}}<p class="form-error" role="alert">{{.Error}}</p>{{end}}
+    <form method="post" action="/login">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required autofocus>
+      <button type="submit">Sign in</button>
+    </form>
+  </main>
+</body>
+</html>
+{{end}}

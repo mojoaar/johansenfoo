@@ -1,0 +1,84 @@
+:root {
+  --a-bg: #0f1117;
+  --a-bg2: #161923;
+  --a-bg3: #1d2130;
+  --a-border: #2a2f42;
+  --a-text: #e6e8ef;
+  --a-muted: #9aa1b5;
+  --a-accent: #7c6af7;
+  --a-danger: #e5484d;
+  --a-radius: 10px;
+  --a-font: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--a-bg);
+  color: var(--a-text);
+  font-family: var(--a-font);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+.auth-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 26rem;
+  background: var(--a-bg2);
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius);
+  padding: 2rem;
+}
+
+.auth-card h1 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+.auth-note { color: var(--a-muted); font-size: 0.8rem; margin-bottom: 1.25rem; }
+.form-error {
+  background: color-mix(in srgb, var(--a-danger) 18%, transparent);
+  border: 1px solid var(--a-danger);
+  border-radius: var(--a-radius);
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+label { display: block; font-size: 0.8rem; color: var(--a-muted); margin-bottom: 0.3rem; }
+input[type="password"], input[type="text"], input[type="url"], input[type="number"], select, textarea {
+  width: 100%;
+  background: var(--a-bg3);
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius);
+  color: var(--a-text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.6rem 0.7rem;
+  margin-bottom: 1rem;
+}
+textarea { min-height: 6rem; resize: vertical; }
+
+button {
+  background: var(--a-accent);
+  border: 0;
+  border-radius: var(--a-radius);
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  min-height: 44px;
+  padding: 0.6rem 1.1rem;
+}
+
+button.secondary { background: var(--a-bg3); border: 1px solid var(--a-border); color: var(--a-text); }
+button.danger { background: var(--a-danger); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
