@@ -14,16 +14,20 @@
 
 <section class="card">
   <h2>API key</h2>
-  {{if .APIKey}}
-    <p class="admin-note">Copy this now. Regenerating replaces it immediately and any client using the old key stops working.</p>
-    <p><code class="api-key">{{.APIKey}}</code></p>
+  {{if .HasAPIKey}}
+    {{if .APIKey}}
+      <p class="admin-note">Copy this now. Regenerating replaces it immediately and any client using the old key stops working.</p>
+      <p><code class="api-key">{{.APIKey}}</code></p>
+    {{else}}
+      <p class="admin-note">An API key is configured but hidden. Regenerating replaces it immediately and any client using the old key stops working.</p>
+    {{end}}
   {{else}}
     <p class="admin-note">No API key is configured. Agents and scripts authenticate with <code>Authorization: Bearer &lt;key&gt;</code> once one exists.</p>
   {{end}}
   <form method="post" action="/admin/security/apikey">
     <input type="hidden" name="csrf_token" value="{{.CSRF}}">
     <div class="actions">
-      <button type="submit"{{if .APIKey}} class="danger"{{end}}>{{if .APIKey}}Regenerate key{{else}}Generate key{{end}}</button>
+      <button type="submit"{{if .HasAPIKey}} class="danger"{{end}}>{{if .HasAPIKey}}Regenerate key{{else}}Generate key{{end}}</button>
     </div>
   </form>
 </section>

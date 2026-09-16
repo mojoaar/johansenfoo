@@ -35,6 +35,7 @@ type page struct {
 	Error          string
 	Version        string
 	APIKey         string
+	HasAPIKey      bool
 	IsNew          bool
 	Project        db.Project
 	Item           db.Experience

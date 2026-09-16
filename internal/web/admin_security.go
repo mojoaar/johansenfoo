@@ -14,8 +14,9 @@ func adminSecurityGetHandler(d Deps) http.HandlerFunc {
 		c := d.Content.Current()
 		data := NewAdminPage(d, r, "security", "Security")
 		data.ThemeSlug = c.Theme.Slug
-		if r.URL.Query().Get("key") == "1" {
-			if key, err := db.NewSettingsRepo(d.DB).Get(apiKeySettingKey); err == nil {
+		if key, err := db.NewSettingsRepo(d.DB).Get(apiKeySettingKey); err == nil {
+			data.HasAPIKey = true
+			if r.URL.Query().Get("key") == "1" {
 				data.APIKey = key
 			}
 		}
@@ -58,6 +59,10 @@ func adminPasswordChangeHandler(d Deps) http.HandlerFunc {
 			http.Error(w, "storage error", http.StatusInternalServerError)
 			return
 		}
+		if err := d.Content.Reload(); err != nil {
+			http.Error(w, "reload failed", http.StatusInternalServerError)
+			return
+		}
 		http.Redirect(w, r, "/admin/security?saved=1", http.StatusSeeOther)
 	}
 }
@@ -67,6 +72,10 @@ func adminAPIKeyRegenerateHandler(d Deps) http.HandlerFunc {
 		key := randomToken() + randomToken()
 		if err := db.NewSettingsRepo(d.DB).Set(apiKeySettingKey, key); err != nil {
 			http.Error(w, "storage error", http.StatusInternalServerError)
+			return
+		}
+		if err := d.Content.Reload(); err != nil {
+			http.Error(w, "reload failed", http.StatusInternalServerError)
 			return
 		}
 		http.Redirect(w, r, "/admin/security?key=1", http.StatusSeeOther)

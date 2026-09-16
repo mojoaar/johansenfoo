@@ -3,6 +3,7 @@ package web
 import (
 	"database/sql"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
@@ -33,6 +34,36 @@ func TestSecurityPageHidesTheKeyWhenNoneExists(t *testing.T) {
 	body := rec.Body.String()
 	if !strings.Contains(body, "No API key") {
 		t.Error("security page does not show the empty API key state")
+	}
+}
+
+func TestSecurityPageReportsExistingKeyAsConfigured(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	const storedKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	if err := db.NewSettingsRepo(d).Set(apiKeySettingKey, storedKey); err != nil {
+		t.Fatalf("Set api_key: %v", err)
+	}
+
+	rec := adminRequest(t, d, store, http.MethodGet, "/admin/security", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	body := rec.Body.String()
+	if strings.Contains(body, "No API key") {
+		t.Error("security page reports no key although one is stored")
+	}
+	if !strings.Contains(body, "Regenerate key") {
+		t.Error("security page does not offer to regenerate the existing key")
+	}
+	if strings.Contains(body, "Generate key") {
+		t.Error("security page offers Generate key although one is stored")
+	}
+	if !strings.Contains(body, "replaces it immediately") {
+		t.Error("security page omits the regenerate warning for a hidden key")
+	}
+	if strings.Contains(body, storedKey) {
+		t.Error("security page revealed the stored key without ?key=1")
 	}
 }
 
@@ -120,5 +151,101 @@ func TestPasswordChangeRejectsMismatch(t *testing.T) {
 	})
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400", rec.Code)
+	}
+}
+
+func securityPageGet(t *testing.T, h http.Handler) (string, string) {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodGet, "/admin/security", nil)
+	req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: "test-session"})
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /admin/security status = %d, want 200; body=%s", rec.Code, rec.Body.String())
+	}
+	return rec.Body.String(), findCookie(t, rec.Result().Cookies(), csrfCookieName).Value
+}
+
+func TestAdminSecurityFormTemplatesRenderCSRFToken(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := loggedInHandler(t, d, store)
+
+	body, token := securityPageGet(t, h)
+	want := `name="csrf_token" value="` + token + `"`
+	if got := strings.Count(body, want); got != 3 {
+		t.Errorf("/admin/security renders %d csrf-token hidden fields, want 3", got)
+	}
+}
+
+func TestAdminSecurityPostAcceptsRenderedCSRFToken(t *testing.T) {
+	d := newTestDB(t)
+	setPassword(t, d, "original-password")
+	store, _ := NewContentStore(d)
+	h := loggedInHandler(t, d, store)
+	body, cookieToken := securityPageGet(t, h)
+
+	cases := []struct {
+		path string
+		form url.Values
+	}{
+		{path: "/admin/security/password", form: url.Values{
+			"current_password": {"original-password"},
+			"new_password":     {"a-long-enough-new-one"},
+			"confirm_password": {"a-long-enough-new-one"},
+		}},
+		{path: "/admin/security/apikey", form: url.Values{}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.path, func(t *testing.T) {
+			token := csrfTokenForAction(t, body, tc.path)
+			if token != cookieToken {
+				t.Fatalf("form %q token does not match the issued CSRF cookie", tc.path)
+			}
+			form := url.Values{"csrf_token": {token}}
+			for k, v := range tc.form {
+				form[k] = v
+			}
+			req := httptest.NewRequest(http.MethodPost, tc.path, strings.NewReader(form.Encode()))
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: "test-session"})
+			req.AddCookie(&http.Cookie{Name: csrfCookieName, Value: cookieToken})
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, req)
+			if rec.Code != http.StatusSeeOther {
+				t.Fatalf("status = %d, want 303; body=%s", rec.Code, rec.Body.String())
+			}
+		})
+	}
+}
+
+func TestAdminSecurityPostRejectsMissingCSRF(t *testing.T) {
+	d := newTestDB(t)
+	setPassword(t, d, "original-password")
+	store, _ := NewContentStore(d)
+	h := loggedInHandler(t, d, store)
+
+	cases := []struct {
+		path string
+		form url.Values
+	}{
+		{path: "/admin/security/password", form: url.Values{
+			"current_password": {"original-password"},
+			"new_password":     {"a-long-enough-new-one"},
+			"confirm_password": {"a-long-enough-new-one"},
+		}},
+		{path: "/admin/security/apikey", form: url.Values{}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.path, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, tc.path, strings.NewReader(tc.form.Encode()))
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: "test-session"})
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, req)
+			if rec.Code != http.StatusForbidden {
+				t.Fatalf("status = %d, want 403; a security POST without a CSRF token was accepted", rec.Code)
+			}
+		})
 	}
 }
