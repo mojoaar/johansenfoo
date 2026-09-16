@@ -157,3 +157,14 @@ th { color: var(--a-muted); font-weight: 400; font-size: 0.75rem; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+.api-key {
+  display: block;
+  overflow-wrap: anywhere;
+  background: var(--a-bg3);
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+}

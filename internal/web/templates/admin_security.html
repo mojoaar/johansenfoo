@@ -1,0 +1,30 @@
+{{define "admin_security"}}{{template "admin_head" .}}
+<section class="card">
+  <h2>Change password</h2>
+  <form method="post" action="/admin/security/password">
+    <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+    <div class="grid-2">
+      <div><label for="current_password">Current password</label><input type="password" id="current_password" name="current_password" autocomplete="current-password" required></div>
+      <div><label for="new_password">New password</label><input type="password" id="new_password" name="new_password" minlength="12" autocomplete="new-password" required></div>
+      <div><label for="confirm_password">Confirm new password</label><input type="password" id="confirm_password" name="confirm_password" minlength="12" autocomplete="new-password" required></div>
+    </div>
+    <div class="actions"><button type="submit">Change password</button></div>
+  </form>
+</section>
+
+<section class="card">
+  <h2>API key</h2>
+  {{if .APIKey}}
+    <p class="admin-note">Copy this now. Regenerating replaces it immediately and any client using the old key stops working.</p>
+    <p><code class="api-key">{{.APIKey}}</code></p>
+  {{else}}
+    <p class="admin-note">No API key is configured. Agents and scripts authenticate with <code>Authorization: Bearer &lt;key&gt;</code> once one exists.</p>
+  {{end}}
+  <form method="post" action="/admin/security/apikey">
+    <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+    <div class="actions">
+      <button type="submit"{{if .APIKey}} class="danger"{{end}}>{{if .APIKey}}Regenerate key{{else}}Generate key{{end}}</button>
+    </div>
+  </form>
+</section>
+{{template "admin_foot" .}}{{end}}

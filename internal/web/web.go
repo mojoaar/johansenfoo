@@ -74,6 +74,9 @@ func New(d Deps) http.Handler {
 		ar.Post("/skills", adminSkillCreateHandler(d))
 		ar.Post("/skills/{id}", adminSkillUpdateHandler(d))
 		ar.Post("/skills/{id}/delete", adminSkillDeleteHandler(d))
+		ar.Get("/security", adminSecurityGetHandler(d))
+		ar.Post("/security/password", adminPasswordChangeHandler(d))
+		ar.Post("/security/apikey", adminAPIKeyRegenerateHandler(d))
 	})
 
 	return r
