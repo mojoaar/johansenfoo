@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/mojoaar/johansenfoo/internal/config"
+	"github.com/mojoaar/johansenfoo/internal/db"
 	"github.com/mojoaar/johansenfoo/internal/web"
 )
 
@@ -28,21 +29,48 @@ func main() {
 	}
 }
 
+func buildHandler(dataDir string) (http.Handler, *config.Config, func(), error) {
+	cfg, err := config.Load(dataDir)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("load config: %w", err)
+	}
+
+	d, err := db.Open(cfg.DBPath)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("open db: %w", err)
+	}
+
+	if err := db.Migrate(d); err != nil {
+		_ = d.Close()
+		return nil, nil, nil, fmt.Errorf("migrate: %w", err)
+	}
+
+	content, err := web.LoadContent(d)
+	if err != nil {
+		_ = d.Close()
+		return nil, nil, nil, fmt.Errorf("load content: %w", err)
+	}
+
+	handler := web.New(web.Deps{
+		DB:      d,
+		Cfg:     cfg,
+		Content: content,
+		Version: version,
+		Started: time.Now(),
+	})
+	return handler, cfg, func() { _ = d.Close() }, nil
+}
+
 func run(dataDir string) error {
 	if err := os.MkdirAll(dataDir, 0o755); err != nil {
 		return err
 	}
 
-	cfg, err := config.Load(dataDir)
+	handler, cfg, cleanup, err := buildHandler(dataDir)
 	if err != nil {
-		return fmt.Errorf("load config: %w", err)
+		return err
 	}
-
-	handler := web.New(web.Deps{
-		Cfg:     cfg,
-		Version: version,
-		Started: time.Now(),
-	})
+	defer cleanup()
 
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.Port),

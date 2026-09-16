@@ -25,9 +25,9 @@ func newTestHandler(t *testing.T) http.Handler {
 		t.Fatalf("db.Migrate: %v", err)
 	}
 
-	content, err := loadContent(d)
+	content, err := LoadContent(d)
 	if err != nil {
-		t.Fatalf("loadContent: %v", err)
+		t.Fatalf("LoadContent: %v", err)
 	}
 
 	return New(Deps{

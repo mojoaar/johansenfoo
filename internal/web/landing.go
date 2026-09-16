@@ -8,7 +8,7 @@ import (
 	"github.com/mojoaar/johansenfoo/internal/theme"
 )
 
-func loadContent(d *sql.DB) (*db.SiteContent, error) {
+func LoadContent(d *sql.DB) (*db.SiteContent, error) {
 	profile, err := db.NewProfileRepo(d).Get()
 	if err != nil {
 		return nil, err
