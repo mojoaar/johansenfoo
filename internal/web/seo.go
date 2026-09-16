@@ -77,11 +77,17 @@ func themeColor(c *db.SiteContent) string {
 func personSchema(c *db.SiteContent) template.HTML {
 	sameAs := make([]string, 0, len(c.Social))
 	for _, s := range c.Social {
+		if !s.Visible {
+			continue
+		}
 		if s.Platform != "github" {
 			sameAs = append(sameAs, s.URL)
 		}
 	}
 	for _, s := range c.Social {
+		if !s.Visible {
+			continue
+		}
 		if s.Platform == "github" {
 			sameAs = append(sameAs, s.URL)
 		}

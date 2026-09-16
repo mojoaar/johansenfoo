@@ -1,0 +1,48 @@
+{{define "admin_social"}}{{template "admin_head" .}}
+<section class="card">
+  <h2>Add a link</h2>
+  <form method="post" action="/admin/social" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+    <div><label for="new-platform">Platform</label><input type="text" id="new-platform" name="platform" required></div>
+    <div><label for="new-url">URL</label><input type="text" id="new-url" name="url" required></div>
+    <div><label for="new-label">Label</label><input type="text" id="new-label" name="label"></div>
+    <div><label for="new-sort">Sort</label><input type="number" id="new-sort" name="sort" value="0"></div>
+    <div><label><input type="checkbox" name="visible" value="1" checked> visible</label></div>
+    <button type="submit">Add</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Links</h2>
+  <table>
+    <thead><tr><th>Platform</th><th>URL</th><th>Label</th><th>Sort</th><th>Visible</th><th></th></tr></thead>
+    <tbody>
+    {{range .Social}}
+      <tr>
+        <td colspan="6">
+          <form method="post" action="/admin/social/{{.ID}}" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+            <div><input type="text" name="platform" value="{{.Platform}}" required></div>
+            <div><input type="text" name="url" value="{{.URL}}" required></div>
+            <div><input type="text" name="label" value="{{.Label}}"></div>
+            <div><input type="number" name="sort" value="{{.Sort}}"></div>
+            <div><label><input type="checkbox" name="visible" value="1"{{if .Visible}} checked{{end}}> visible</label></div>
+            <button type="submit" class="secondary">Save</button>
+          </form>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="6">
+          <form method="post" action="/admin/social/{{.ID}}/delete" class="row-actions">
+            <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+            <button type="submit" class="danger">Delete {{.Platform}}</button>
+          </form>
+        </td>
+      </tr>
+    {{else}}
+      <tr><td colspan="6">No social links.</td></tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{template "admin_foot" .}}{{end}}

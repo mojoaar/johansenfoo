@@ -52,6 +52,12 @@ func New(d Deps) http.Handler {
 	r.Route("/admin", func(ar chi.Router) {
 		ar.Use(authMiddleware(d))
 		ar.Get("/", adminDashboardHandler(d))
+		ar.Get("/profile", adminProfileGetHandler(d))
+		ar.Post("/profile", adminProfilePostHandler(d))
+		ar.Get("/social", adminSocialGetHandler(d))
+		ar.Post("/social", adminSocialCreateHandler(d))
+		ar.Post("/social/{id}", adminSocialUpdateHandler(d))
+		ar.Post("/social/{id}/delete", adminSocialDeleteHandler(d))
 	})
 
 	return r

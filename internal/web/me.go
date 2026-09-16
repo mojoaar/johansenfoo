@@ -51,6 +51,9 @@ func meHandler(d Deps) http.HandlerFunc {
 
 		social := make(map[string]string, len(c.Social))
 		for _, s := range c.Social {
+			if !s.Visible {
+				continue
+			}
 			social[s.Platform] = s.URL
 		}
 

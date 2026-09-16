@@ -1,0 +1,35 @@
+{{define "admin_profile"}}{{template "admin_head" .}}
+<form method="post" action="/admin/profile">
+  <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+  <section class="card">
+    <h2>Identity</h2>
+    <div class="grid-2">
+      <div><label for="name">Name</label><input type="text" id="name" name="name" value="{{.Profile.Name}}" required></div>
+      <div><label for="handle">Handle</label><input type="text" id="handle" name="handle" value="{{.Profile.Handle}}"></div>
+      <div><label for="location">Location</label><input type="text" id="location" name="location" value="{{.Profile.Location}}"></div>
+      <div><label for="dob">Date of birth (YYYY-MM-DD)</label><input type="text" id="dob" name="dob" value="{{.Profile.DOB}}"></div>
+    </div>
+    <label for="tagline">Tagline</label>
+    <input type="text" id="tagline" name="tagline" value="{{.Profile.Tagline}}">
+    <label for="avatar">Avatar URL</label>
+    <input type="text" id="avatar" name="avatar" value="{{.Profile.Avatar}}">
+  </section>
+
+  <section class="card">
+    <h2>Text</h2>
+    <label for="hero_bio">Hero bio (markdown)</label>
+    <textarea id="hero_bio" name="hero_bio">{{.Profile.HeroBio}}</textarea>
+    <label for="bio">Machine bio for <code>/me</code> (plain text)</label>
+    <textarea id="bio" name="bio">{{.Profile.Bio}}</textarea>
+    <label for="about_para_1">About paragraph 1 (markdown)</label>
+    <textarea id="about_para_1" name="about_para_1">{{.Profile.AboutPara1}}</textarea>
+    <label for="about_para_2">About paragraph 2 (markdown)</label>
+    <textarea id="about_para_2" name="about_para_2">{{.Profile.AboutPara2}}</textarea>
+  </section>
+
+  <div class="actions">
+    <button type="submit">Save profile</button>
+    <a href="/" target="_blank" rel="noopener"><button type="button" class="secondary">Preview site</button></a>
+  </div>
+</form>
+{{template "admin_foot" .}}{{end}}

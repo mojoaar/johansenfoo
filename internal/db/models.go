@@ -19,6 +19,7 @@ type SocialLink struct {
 	URL      string
 	Label    string
 	Sort     int
+	Visible  bool
 }
 
 type Project struct {
