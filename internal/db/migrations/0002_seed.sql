@@ -86,3 +86,13 @@ INSERT INTO settings (key, value) VALUES
 Allow: /
 
 Sitemap: https://johansen.foo/sitemap.xml');
+
+INSERT INTO theme (slug, name, description, sort, created_at, updated_at)
+VALUES (
+    'johansen',
+    'Johansen',
+    'The original johansen.foo theme.',
+    0,
+    strftime('%Y-%m-%dT%H:%M:%SZ','now'),
+    strftime('%Y-%m-%dT%H:%M:%SZ','now')
+);
