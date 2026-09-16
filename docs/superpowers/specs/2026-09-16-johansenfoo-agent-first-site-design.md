@@ -120,7 +120,7 @@ Metadata is resolved with clear precedence: per-page or per-post override → SE
 
 **Global defaults** (admin-editable): site title, title template (e.g. `%s | johansen.foo`), default meta description, default OG image, OG type, Twitter card type, Twitter site handle, canonical base URL, `robots.txt` body, site-wide `noindex` toggle, sitemap toggle.
 
-**Per-page overrides** live in `page_seo`, keyed by route, for the home page, post index, tag archive, and about section. **Per-post overrides** live on the `post` row: `seo_title`, `seo_description`, `og_image_url`, `canonical_url`, `noindex`. A post description defaults to its summary; a post OG image defaults to its hero image.
+**Per-page overrides** live in `page_seo`, keyed by route: the home page (`/`), the post index (`/posts`), and tag archives (`/tags/{slug}`). The about section is part of the home page and therefore inherits the home page's metadata rather than having its own. **Per-post overrides** live on the `post` row: `seo_title`, `seo_description`, `og_image_url`, `canonical_url`, `noindex`. A post description defaults to its summary; a post OG image defaults to its hero image.
 
 **Structured data** is generated server-side: a `Person` schema from the profile (as today) and a `BlogPosting` schema per post.
 
@@ -145,7 +145,7 @@ Authentication is a session cookie (from the bcrypt admin password) **or** `Auth
 
 **Admin UI** — `/admin` and `/admin/*`, HTMX-driven CRUD for every entity, publish/unpublish, API-key regeneration, password change, a theme list with a token editor and "set active theme", and stats on/off plus retention settings.
 
-**Admin dashboard** — visitor cards (views today / 7d / 30d, uniques, top pages, top referrers, recent hits) and runtime cards. Runtime cards show goroutines, heap, GC and uptime from the Prometheus collectors, plus container CPU percentage, memory used against limit, and disk used against total for the data volume. The runtime panel polls over HTMX roughly every 5 seconds; visitor cards refresh on load.
+**Admin dashboard** — visitor cards (views today / 7d / 30d, daily uniques, top pages, top referrers, recent hits) and runtime cards. Runtime cards show goroutines, heap, GC and uptime from the Prometheus collectors, plus container CPU percentage, memory used against limit, and disk used against total for the data volume. The runtime panel polls over HTMX roughly every 5 seconds; visitor cards refresh on load.
 
 **Admin REST API:**
 - `/api/v1/admin/profile`, `/projects`, `/experience`, `/skills`, `/posts` — full CRUD
@@ -186,7 +186,7 @@ Every theme supplies both a light and a dark token set; the base theme fills any
 
 **Token vocabulary** (widened beyond the original thin set):
 
-- **Colour** — the full shadcn-style surface/foreground pair set: `background`/`foreground`, `card`, `popover`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `border`, `input`, `ring`, and `chart-1..5`.
+- **Colour** — the full shadcn-style surface/foreground pair set: `background`/`foreground`, `card`, `popover`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `border`, `input`, `ring`. Chart tokens are deliberately omitted — the site renders no charts.
 - **Typography** — font pairings, type scale, line-height, letter-spacing, weights.
 - **Shape & depth** — radius, border width, shadow set.
 - **Syntax highlighting** — code tokens derived from the theme palette.
@@ -212,7 +212,7 @@ Markdown is parsed with goldmark (GFM) and sanitised before rendering. Code high
 
 A page-view middleware records GET requests that return HTML on public routes only. It explicitly **excludes `/admin`, `/static`, `/api`, `/mcp`, and `/metrics`**.
 
-No cookies, no raw IPs, no PII: an IP is stored only as a salted hash, and the **salt rotates daily** so a visitor cannot be correlated across days. A daily background goroutine prunes `page_view` rows older than `stats_retention_days`. `stats_enabled` turns collection off entirely.
+No cookies, no raw IPs, no PII: an IP is stored only as a salted hash, and the **salt rotates daily** so a visitor cannot be correlated across days. Because the salt rotates, uniqueness can only be computed within a single day — the 7-day and 30-day figures on the dashboard are therefore **sums of daily uniques**, not deduplicated visitors across the whole window. A daily background goroutine prunes `page_view` rows older than `stats_retention_days`. `stats_enabled` turns collection off entirely.
 
 ## Runtime Stats
 
@@ -250,6 +250,19 @@ Following the `icloud-mailflow` convention: a new feature, endpoint, or MCP tool
 ## Testing
 
 Table-driven `_test.go` files per package covering the database repos, handlers, auth, MCP tools, markdown, theme, and sysinfo. Routes are exercised with `httptest` against a temporary or in-memory SQLite database. `go test ./...` and `go vet ./...` must pass.
+
+## Implementation Phases
+
+The spec describes one product, but it is too much for a single uninterrupted build. Implementation is phased, each phase leaving the site in a working state:
+
+1. **Foundation** — repo scaffold, config, database with migrations and content seeding, the `theme` package with the token vocabulary and the `johansen` theme, the `icons` package, the landing page ported to `html/template` and rendered from the database, `/me`, static assets, `/health`. *Deliverable: a visually identical public site that already reads its content from SQLite.*
+2. **Auth & admin** — bcrypt password, setup and login, session cookie, CSRF, and the HTMX admin CRUD UI for profile, projects, experience, and skills.
+3. **REST API** — the public read endpoints and the authenticated write endpoints, plus export and import.
+4. **Posts** — the markdown and Chroma pipeline, `code.css`, posts CRUD, tags, drafts, RSS, the `posts_enabled` kill switch, and the SEO settings and `page_seo` overrides.
+5. **MCP** — the mcp-go server at `/mcp`, API-key auth, rate limiting, and the full tool set.
+6. **Theme library** — the Catppuccin, Nord, Rosé Pine, Tokyo Night, Gruvbox, Everforest, and Solarized seed themes, the theme token editor in admin, and `import_theme`.
+7. **Stats** — the page-view middleware, visitor statistics, `sysinfo` runtime statistics, the dashboard panels, and the retention job.
+8. **Ops** — Dockerfile, docker-compose, both GitHub Actions workflows, the `/docs` reference, and README, AGENTS, CHANGELOG, and VERSION.
 
 ## Open Questions
 
