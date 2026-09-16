@@ -5,8 +5,8 @@ exposes a bcrypt-protected admin surface for editing it.
 
 ## Features
 
-- Public landing page, `/me` JSON profile, `robots.txt`, `sitemap.xml` and `/health`, all rendered
-  from SQLite on each request.
+- Public landing page, `/me` JSON profile, `robots.txt` and `sitemap.xml`, all rendered from SQLite
+  on each request, plus a static `/health` liveness response.
 - Content seeded from the original static site so day one matches byte for byte: profile, social
   links, projects, experience, skills and the `johansen` theme.
 - A small in-memory content snapshot, reloaded after every admin write, so edits appear on the next

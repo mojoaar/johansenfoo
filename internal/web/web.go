@@ -79,15 +79,19 @@ func New(d Deps) http.Handler {
 		ar.Post("/security/apikey", adminAPIKeyRegenerateHandler(d))
 	})
 
-	go func() {
-		ticker := time.NewTicker(time.Hour)
-		defer ticker.Stop()
-		for range ticker.C {
-			_, _ = pruneSessions(d.DB)
-		}
-	}()
+	startSessionPruner(d.DB, time.Hour)
 
 	return r
+}
+
+func startSessionPruner(d *sql.DB, interval time.Duration) (stop func()) {
+	ticker := time.NewTicker(interval)
+	go func() {
+		for range ticker.C {
+			_, _ = pruneSessions(d)
+		}
+	}()
+	return ticker.Stop
 }
 
 func securityHeaders(next http.Handler) http.Handler {

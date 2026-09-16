@@ -44,6 +44,7 @@ internal/web/content.go     ContentStore: cached SiteContent snapshot with Reloa
 internal/web/landing.go     LoadContent and the public landing handler
 internal/web/me.go          /me JSON profile
 internal/web/seo.go         robots.txt, sitemap.xml and page metadata
+internal/web/health.go      static liveness response for /health
 internal/web/render.go      page data, embedded templates, renderPage/renderAdmin
 internal/web/static.go      embedded static assets; directory listings are rejected
 internal/web/auth.go        bcrypt password, sessions, auth middleware, session pruning

@@ -1,6 +1,7 @@
 package web
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -26,6 +27,35 @@ func TestPruneSessionsRemovesOnlyExpired(t *testing.T) {
 	if n != 1 {
 		t.Errorf("pruned = %d, want 1", n)
 	}
+	if _, err := r.Get("live"); err != nil {
+		t.Errorf("live session was pruned: %v", err)
+	}
+}
+
+func TestStartSessionPrunerDeletesExpiredOnSchedule(t *testing.T) {
+	d := newTestDB(t)
+	r := db.NewSessionRepo(d)
+	if err := r.Create("expired", time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)); err != nil {
+		t.Fatalf("Create expired: %v", err)
+	}
+	if err := r.Create("live", time.Now().UTC().Add(time.Hour)); err != nil {
+		t.Fatalf("Create live: %v", err)
+	}
+
+	stop := startSessionPruner(d, 10*time.Millisecond)
+	defer stop()
+
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		if _, err := r.Get("expired"); errors.Is(err, db.ErrSessionNotFound) {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("expired session was not pruned within the deadline")
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+
 	if _, err := r.Get("live"); err != nil {
 		t.Errorf("live session was pruned: %v", err)
 	}
