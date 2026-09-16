@@ -37,6 +37,9 @@ func New(d Deps) http.Handler {
 	r.Handle("/static/*", static)
 
 	r.Get("/", landingHandler(d))
+	r.Get("/me", meHandler(d))
+	r.Get("/robots.txt", robotsHandler(d))
+	r.Get("/sitemap.xml", sitemapHandler(d))
 	r.Get("/health", healthHandler(d))
 
 	return r

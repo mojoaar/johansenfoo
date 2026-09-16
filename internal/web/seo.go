@@ -3,6 +3,7 @@ package web
 import (
 	"encoding/json"
 	"html/template"
+	"net/http"
 
 	"github.com/mojoaar/johansenfoo/internal/db"
 )
@@ -108,4 +109,32 @@ func personSchema(c *db.SiteContent) template.HTML {
 		return ""
 	}
 	return template.HTML(`<script type="application/ld+json">` + string(body) + `</script>`)
+}
+
+func robotsHandler(d Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body := d.Content.Settings["robots_txt"]
+		if body == "" {
+			body = "User-agent: *\nAllow: /\n"
+		}
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, _ = w.Write([]byte(body))
+	}
+}
+
+func sitemapHandler(d Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		base := d.Content.Settings["canonical_base_url"]
+		if base == "" {
+			base = "https://johansen.foo"
+		}
+
+		w.Header().Set("Content-Type", "application/xml; charset=utf-8")
+		_, _ = w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>` + "\n"))
+		_, _ = w.Write([]byte(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n"))
+		_, _ = w.Write([]byte("  <url>\n"))
+		_, _ = w.Write([]byte("    <loc>" + base + "/</loc>\n"))
+		_, _ = w.Write([]byte("  </url>\n"))
+		_, _ = w.Write([]byte("</urlset>\n"))
+	}
 }
