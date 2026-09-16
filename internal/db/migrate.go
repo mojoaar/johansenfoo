@@ -67,7 +67,7 @@ func Migrate(d *sql.DB) error {
 			return fmt.Errorf("migration %s: %w", name, err)
 		}
 		if _, err := tx.Exec(
-			`INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, datetime('now'))`,
+			`INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%SZ','now'))`,
 			version, name,
 		); err != nil {
 			_ = tx.Rollback()
