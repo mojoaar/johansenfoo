@@ -80,8 +80,8 @@ func nullableURL(u string) any {
 
 func (r *ContentRepo) Experience() ([]Experience, error) {
 	rows, err := r.db.Query(`
-		SELECT id, years, role, company, icon, sort
-		FROM experience WHERE visible = 1 ORDER BY sort, id`)
+		SELECT id, years, role, company, icon, sort, visible
+		FROM experience ORDER BY sort, id`)
 	if err != nil {
 		return nil, err
 	}
@@ -90,9 +90,11 @@ func (r *ContentRepo) Experience() ([]Experience, error) {
 	var out []Experience
 	for rows.Next() {
 		var e Experience
-		if err := rows.Scan(&e.ID, &e.Years, &e.Role, &e.Company, &e.Icon, &e.Sort); err != nil {
+		var visible int
+		if err := rows.Scan(&e.ID, &e.Years, &e.Role, &e.Company, &e.Icon, &e.Sort, &visible); err != nil {
 			return nil, err
 		}
+		e.Visible = visible != 0
 		out = append(out, e)
 	}
 	return out, rows.Err()
@@ -100,7 +102,7 @@ func (r *ContentRepo) Experience() ([]Experience, error) {
 
 func (r *ContentRepo) Skills() ([]Skill, error) {
 	rows, err := r.db.Query(`
-		SELECT id, name, sort FROM skill WHERE visible = 1 ORDER BY sort, id`)
+		SELECT id, name, sort, visible FROM skill ORDER BY sort, id`)
 	if err != nil {
 		return nil, err
 	}
@@ -109,10 +111,86 @@ func (r *ContentRepo) Skills() ([]Skill, error) {
 	var out []Skill
 	for rows.Next() {
 		var s Skill
-		if err := rows.Scan(&s.ID, &s.Name, &s.Sort); err != nil {
+		var visible int
+		if err := rows.Scan(&s.ID, &s.Name, &s.Sort, &visible); err != nil {
 			return nil, err
 		}
+		s.Visible = visible != 0
 		out = append(out, s)
 	}
 	return out, rows.Err()
+}
+
+func (r *ContentRepo) ExperienceItem(id int64) (*Experience, error) {
+	var e Experience
+	var visible int
+	err := r.db.QueryRow(
+		`SELECT id, years, role, company, icon, sort, visible FROM experience WHERE id = ?`, id,
+	).Scan(&e.ID, &e.Years, &e.Role, &e.Company, &e.Icon, &e.Sort, &visible)
+	if err != nil {
+		return nil, err
+	}
+	e.Visible = visible != 0
+	return &e, nil
+}
+
+func (r *ContentRepo) CreateExperience(e *Experience) (int64, error) {
+	res, err := r.db.Exec(
+		`INSERT INTO experience (years, role, company, icon, sort, visible) VALUES (?, ?, ?, ?, ?, ?)`,
+		e.Years, e.Role, e.Company, e.Icon, e.Sort, boolToInt(e.Visible),
+	)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func (r *ContentRepo) UpdateExperience(e *Experience) error {
+	_, err := r.db.Exec(
+		`UPDATE experience SET years = ?, role = ?, company = ?, icon = ?, sort = ?, visible = ? WHERE id = ?`,
+		e.Years, e.Role, e.Company, e.Icon, e.Sort, boolToInt(e.Visible), e.ID,
+	)
+	return err
+}
+
+func (r *ContentRepo) DeleteExperience(id int64) error {
+	_, err := r.db.Exec(`DELETE FROM experience WHERE id = ?`, id)
+	return err
+}
+
+func (r *ContentRepo) Skill(id int64) (*Skill, error) {
+	var s Skill
+	var visible int
+	err := r.db.QueryRow(
+		`SELECT id, name, sort, visible FROM skill WHERE id = ?`, id,
+	).Scan(&s.ID, &s.Name, &s.Sort, &visible)
+	if err != nil {
+		return nil, err
+	}
+	s.Visible = visible != 0
+	return &s, nil
+}
+
+func (r *ContentRepo) CreateSkill(s *Skill) (int64, error) {
+	res, err := r.db.Exec(
+		`INSERT INTO skill (name, sort, visible) VALUES (?, ?, ?)`,
+		s.Name, s.Sort, boolToInt(s.Visible),
+	)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func (r *ContentRepo) UpdateSkill(s *Skill) error {
+	_, err := r.db.Exec(
+		`UPDATE skill SET name = ?, sort = ?, visible = ? WHERE id = ?`,
+		s.Name, s.Sort, boolToInt(s.Visible), s.ID,
+	)
+	return err
+}
+
+func (r *ContentRepo) DeleteSkill(id int64) error {
+	_, err := r.db.Exec(`DELETE FROM skill WHERE id = ?`, id)
+	return err
 }

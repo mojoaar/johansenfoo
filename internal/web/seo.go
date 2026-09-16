@@ -95,6 +95,9 @@ func personSchema(c *db.SiteContent) template.HTML {
 
 	knowsAbout := make([]string, 0, len(c.Skills))
 	for _, s := range c.Skills {
+		if !s.Visible {
+			continue
+		}
 		knowsAbout = append(knowsAbout, s.Name)
 	}
 

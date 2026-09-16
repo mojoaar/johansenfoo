@@ -1,0 +1,19 @@
+{{define "admin_experience_form"}}{{template "admin_head" .}}
+<form method="post" action="{{if .IsNew}}/admin/experience{{else}}/admin/experience/{{.Item.ID}}{{end}}">
+  <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+  <section class="card">
+    <div class="grid-2">
+      <div><label for="years">Years</label><input type="text" id="years" name="years" value="{{.Item.Years}}" placeholder="2022–present" required></div>
+      <div><label for="company">Company</label><input type="text" id="company" name="company" value="{{.Item.Company}}" required></div>
+      <div><label for="role">Role</label><input type="text" id="role" name="role" value="{{.Item.Role}}" required></div>
+      <div><label for="icon">Icon name</label><input type="text" id="icon" name="icon" value="{{.Item.Icon}}" placeholder="briefcase"></div>
+      <div><label for="sort">Sort</label><input type="number" id="sort" name="sort" value="{{.Item.Sort}}"></div>
+      <div><label><input type="checkbox" name="visible" value="1"{{if or .IsNew .Item.Visible}} checked{{end}}> visible</label></div>
+    </div>
+  </section>
+  <div class="actions">
+    <button type="submit">Save</button>
+    <a href="/admin/experience"><button type="button" class="secondary">Cancel</button></a>
+  </div>
+</form>
+{{template "admin_foot" .}}{{end}}

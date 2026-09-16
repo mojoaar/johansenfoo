@@ -41,12 +41,14 @@ type Experience struct {
 	Company string
 	Icon    string
 	Sort    int
+	Visible bool
 }
 
 type Skill struct {
-	ID   int64
-	Name string
-	Sort int
+	ID      int64
+	Name    string
+	Sort    int
+	Visible bool
 }
 
 type Theme struct {

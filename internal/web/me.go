@@ -32,6 +32,9 @@ func meHandler(d Deps) http.HandlerFunc {
 
 		skills := make([]string, 0, len(c.Skills))
 		for _, s := range c.Skills {
+			if !s.Visible {
+				continue
+			}
 			skills = append(skills, s.Name)
 		}
 

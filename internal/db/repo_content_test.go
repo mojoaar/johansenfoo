@@ -119,3 +119,134 @@ func TestProjectUpdateTogglesVisibility(t *testing.T) {
 		t.Error("UpdateProject did not persist visible = false")
 	}
 }
+
+func TestExperienceCRUD(t *testing.T) {
+	d := seeded(t)
+	r := NewContentRepo(d)
+
+	id, err := r.CreateExperience(&Experience{Years: "1990-1991", Role: "Tester", Company: "ACME", Icon: "briefcase", Sort: 99, Visible: true})
+	if err != nil {
+		t.Fatalf("CreateExperience: %v", err)
+	}
+	e, err := r.ExperienceItem(id)
+	if err != nil {
+		t.Fatalf("ExperienceItem: %v", err)
+	}
+	if e.Role != "Tester" || e.Company != "ACME" {
+		t.Errorf("created = %+v", e)
+	}
+
+	e.Role = "Senior Tester"
+	if err := r.UpdateExperience(e); err != nil {
+		t.Fatalf("UpdateExperience: %v", err)
+	}
+	e, _ = r.ExperienceItem(id)
+	if e.Role != "Senior Tester" {
+		t.Errorf("Role = %q", e.Role)
+	}
+
+	if err := r.DeleteExperience(id); err != nil {
+		t.Fatalf("DeleteExperience: %v", err)
+	}
+	if _, err := r.ExperienceItem(id); err == nil {
+		t.Error("experience still readable after delete")
+	}
+}
+
+func TestSkillCRUD(t *testing.T) {
+	d := seeded(t)
+	r := NewContentRepo(d)
+
+	id, err := r.CreateSkill(&Skill{Name: "Zig", Sort: 99, Visible: true})
+	if err != nil {
+		t.Fatalf("CreateSkill: %v", err)
+	}
+	s, err := r.Skill(id)
+	if err != nil {
+		t.Fatalf("Skill: %v", err)
+	}
+	if s.Name != "Zig" {
+		t.Errorf("created = %+v", s)
+	}
+
+	s.Name = "Ziglang"
+	s.Sort = 5
+	if err := r.UpdateSkill(s); err != nil {
+		t.Fatalf("UpdateSkill: %v", err)
+	}
+	s, _ = r.Skill(id)
+	if s.Name != "Ziglang" || s.Sort != 5 {
+		t.Errorf("after update = %+v", s)
+	}
+
+	if err := r.DeleteSkill(id); err != nil {
+		t.Fatalf("DeleteSkill: %v", err)
+	}
+	if _, err := r.Skill(id); err == nil {
+		t.Error("skill still readable after delete")
+	}
+}
+
+func TestExperienceListIncludesHidden(t *testing.T) {
+	d := seeded(t)
+	r := NewContentRepo(d)
+
+	if _, err := r.CreateExperience(&Experience{
+		Years: "x", Role: "Hidden Role", Company: "Hidden Co", Icon: "briefcase", Sort: 99, Visible: false,
+	}); err != nil {
+		t.Fatalf("CreateExperience: %v", err)
+	}
+
+	entries, err := r.Experience()
+	if err != nil {
+		t.Fatalf("Experience: %v", err)
+	}
+	var found *Experience
+	for i := range entries {
+		if entries[i].Company == "Hidden Co" {
+			found = &entries[i]
+		}
+	}
+	if found == nil {
+		t.Fatal("hidden experience row is missing from Experience()")
+	}
+	if found.Visible {
+		t.Error("hidden experience row reports Visible = true")
+	}
+	for _, e := range entries {
+		if e.Company != "Hidden Co" && !e.Visible {
+			t.Errorf("seeded experience row %q reports Visible = false", e.Company)
+		}
+	}
+}
+
+func TestSkillListIncludesHidden(t *testing.T) {
+	d := seeded(t)
+	r := NewContentRepo(d)
+
+	if _, err := r.CreateSkill(&Skill{Name: "HiddenSkill", Sort: 99, Visible: false}); err != nil {
+		t.Fatalf("CreateSkill: %v", err)
+	}
+
+	skills, err := r.Skills()
+	if err != nil {
+		t.Fatalf("Skills: %v", err)
+	}
+	var found *Skill
+	for i := range skills {
+		if skills[i].Name == "HiddenSkill" {
+			found = &skills[i]
+		}
+	}
+	if found == nil {
+		t.Fatal("hidden skill row is missing from Skills()")
+	}
+	if found.Visible {
+		t.Error("hidden skill row reports Visible = true")
+	}
+	for _, s := range skills {
+		if s.Name != "HiddenSkill" && !s.Visible {
+			t.Errorf("seeded skill %q reports Visible = false", s.Name)
+		}
+	}
+}

@@ -64,6 +64,16 @@ func New(d Deps) http.Handler {
 		ar.Get("/projects/{id}", adminProjectEditHandler(d))
 		ar.Post("/projects/{id}", adminProjectUpdateHandler(d))
 		ar.Post("/projects/{id}/delete", adminProjectDeleteHandler(d))
+		ar.Get("/experience", adminExperienceGetHandler(d))
+		ar.Get("/experience/new", adminExperienceNewHandler(d))
+		ar.Post("/experience", adminExperienceCreateHandler(d))
+		ar.Get("/experience/{id}", adminExperienceEditHandler(d))
+		ar.Post("/experience/{id}", adminExperienceUpdateHandler(d))
+		ar.Post("/experience/{id}/delete", adminExperienceDeleteHandler(d))
+		ar.Get("/skills", adminSkillsGetHandler(d))
+		ar.Post("/skills", adminSkillCreateHandler(d))
+		ar.Post("/skills/{id}", adminSkillUpdateHandler(d))
+		ar.Post("/skills/{id}/delete", adminSkillDeleteHandler(d))
 	})
 
 	return r

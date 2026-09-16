@@ -1,0 +1,31 @@
+{{define "admin_experience"}}{{template "admin_head" .}}
+<section class="card">
+  <div class="actions">
+    <a href="/admin/experience/new"><button type="button">New experience entry</button></a>
+  </div>
+  <table>
+    <thead><tr><th>Sort</th><th>Years</th><th>Role</th><th>Company</th><th>Icon</th><th>Visible</th><th></th></tr></thead>
+    <tbody>
+    {{range .Experience}}
+      <tr>
+        <td>{{.Sort}}</td>
+        <td>{{.Years}}</td>
+        <td>{{.Role}}</td>
+        <td>{{.Company}}</td>
+        <td>{{.Icon}}</td>
+        <td>{{if .Visible}}yes{{else}}no{{end}}</td>
+        <td class="row-actions">
+          <a href="/admin/experience/{{.ID}}"><button type="button" class="secondary">Edit</button></a>
+          <form method="post" action="/admin/experience/{{.ID}}/delete">
+            <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+            <button type="submit" class="danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {{else}}
+      <tr><td colspan="7">No experience entries.</td></tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{template "admin_foot" .}}{{end}}

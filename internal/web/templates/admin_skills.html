@@ -1,0 +1,44 @@
+{{define "admin_skills"}}{{template "admin_head" .}}
+<section class="card">
+  <h2>Add a skill</h2>
+  <form method="post" action="/admin/skills" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+    <div><label for="new-skill">Name</label><input type="text" id="new-skill" name="name" required></div>
+    <div><label for="new-skill-sort">Sort</label><input type="number" id="new-skill-sort" name="sort" value="0"></div>
+    <div><label><input type="checkbox" name="visible" value="1" checked> visible</label></div>
+    <button type="submit">Add</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Skills ({{len .Skills}})</h2>
+  <table>
+    <thead><tr><th>Name</th><th>Sort</th><th>Visible</th><th></th></tr></thead>
+    <tbody>
+    {{range .Skills}}
+      <tr>
+        <td colspan="4">
+          <form method="post" action="/admin/skills/{{.ID}}" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+            <div><input type="text" name="name" value="{{.Name}}" required></div>
+            <div><input type="number" name="sort" value="{{.Sort}}"></div>
+            <div><label><input type="checkbox" name="visible" value="1"{{if .Visible}} checked{{end}}> visible</label></div>
+            <button type="submit" class="secondary">Save</button>
+          </form>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="4">
+          <form method="post" action="/admin/skills/{{.ID}}/delete">
+            <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+            <button type="submit" class="danger">Delete {{.Name}}</button>
+          </form>
+        </td>
+      </tr>
+    {{else}}
+      <tr><td colspan="4">No skills.</td></tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{template "admin_foot" .}}{{end}}
