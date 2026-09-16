@@ -80,6 +80,36 @@ func TestValidateRejectsMissingToken(t *testing.T) {
 	}
 }
 
+func TestValidateRejectsCSSBreakingValues(t *testing.T) {
+	for _, bad := range []string{
+		"a{",
+		"a}",
+		"a;",
+		`a"}body{color:red}/*`,
+	} {
+		th := Johansen()
+		th.Dark["--bg"] = bad
+
+		err := Validate(th)
+		if err == nil {
+			t.Errorf("Validate accepted value %q, want error", bad)
+			continue
+		}
+		if !strings.Contains(err.Error(), "--bg") {
+			t.Errorf("error for %q = %q, want it to name --bg", bad, err)
+		}
+	}
+}
+
+func TestValidateAcceptsQuotedValues(t *testing.T) {
+	th := Johansen()
+	th.Base["--font-mono"] = `"JetBrains Mono", monospace`
+
+	if err := Validate(th); err != nil {
+		t.Fatalf("Validate rejected a quoted font value: %v", err)
+	}
+}
+
 func TestCSSScopesByThemeAndMode(t *testing.T) {
 	css := CSS(Johansen())
 

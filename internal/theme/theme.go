@@ -3,6 +3,7 @@ package theme
 import (
 	"fmt"
 	"sort"
+	"strings"
 )
 
 type Theme struct {
@@ -44,9 +45,12 @@ func Validate(t Theme) error {
 		{"light", t.Light},
 		{"dark", t.Dark},
 	} {
-		for name := range section.tokens {
+		for name, value := range section.tokens {
 			if !knownTokens[name] {
 				return fmt.Errorf("theme %q: unknown token %q in %s", t.Slug, name, section.label)
+			}
+			if strings.ContainsAny(value, "{};") {
+				return fmt.Errorf("theme %q: token %q in %s contains a CSS-breaking character", t.Slug, name, section.label)
 			}
 		}
 	}

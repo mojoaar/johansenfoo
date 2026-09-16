@@ -167,6 +167,13 @@ func TestSeededThemeMatchesBuiltin(t *testing.T) {
 func TestJohansenThemeSeedIsIdempotent(t *testing.T) {
 	d := seeded(t)
 
+	const sentinel = "2000-01-01T00:00:00Z"
+	if _, err := d.Exec(
+		`UPDATE theme SET created_at = ? WHERE slug = 'johansen'`, sentinel,
+	); err != nil {
+		t.Fatalf("set created_at sentinel: %v", err)
+	}
+
 	if _, err := d.Exec(`DELETE FROM schema_migrations WHERE version = 3`); err != nil {
 		t.Fatalf("delete migration record: %v", err)
 	}
@@ -195,9 +202,17 @@ func TestJohansenThemeSeedIsIdempotent(t *testing.T) {
 	).Scan(&createdAt, &updatedAt); err != nil {
 		t.Fatalf("read timestamps: %v", err)
 	}
+	if createdAt != sentinel {
+		t.Errorf("created_at = %q, want %q preserved across re-migrate", createdAt, sentinel)
+	}
 	for _, ts := range []string{createdAt, updatedAt} {
-		if _, err := time.Parse(time.RFC3339, ts); err != nil {
-			t.Errorf("timestamp %q is not RFC 3339 UTC: %v", ts, err)
+		parsed, err := time.Parse(time.RFC3339, ts)
+		if err != nil {
+			t.Errorf("timestamp %q is not RFC 3339: %v", ts, err)
+			continue
+		}
+		if parsed.Location() != time.UTC {
+			t.Errorf("timestamp %q location = %v, want UTC", ts, parsed.Location())
 		}
 	}
 }
