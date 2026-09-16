@@ -76,3 +76,46 @@ func TestProjectUpdateKeepsNullURL(t *testing.T) {
 		t.Errorf("homelab url stored as %q, want NULL", raw.String)
 	}
 }
+
+func TestProjectUpdateTogglesVisibility(t *testing.T) {
+	d := seeded(t)
+	r := NewContentRepo(d)
+
+	id, err := r.CreateProject(&Project{
+		Name: "zzztoggle", URL: "https://toggle.example.com", Description: "toggle",
+		Icon: "globe", IsLink: true, URLLabel: "toggle.example.com", Sort: 99, Visible: false,
+	})
+	if err != nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+
+	p, err := r.Project(id)
+	if err != nil {
+		t.Fatalf("Project: %v", err)
+	}
+	if p.Visible {
+		t.Fatalf("precondition: Visible = true, want false")
+	}
+
+	p.Visible = true
+	if err := r.UpdateProject(p); err != nil {
+		t.Fatalf("UpdateProject(visible=true): %v", err)
+	}
+	if p, err = r.Project(id); err != nil {
+		t.Fatalf("Project: %v", err)
+	}
+	if !p.Visible {
+		t.Error("UpdateProject did not persist visible = true")
+	}
+
+	p.Visible = false
+	if err := r.UpdateProject(p); err != nil {
+		t.Fatalf("UpdateProject(visible=false): %v", err)
+	}
+	if p, err = r.Project(id); err != nil {
+		t.Fatalf("Project: %v", err)
+	}
+	if p.Visible {
+		t.Error("UpdateProject did not persist visible = false")
+	}
+}

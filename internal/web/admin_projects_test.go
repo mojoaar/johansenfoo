@@ -199,6 +199,67 @@ func TestAdminProjectHiddenRowsStayOutOfPublicSite(t *testing.T) {
 	}
 }
 
+func publicLandingBody(t *testing.T, h http.Handler) string {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET / status = %d, want 200", rec.Code)
+	}
+	return rec.Body.String()
+}
+
+func TestAdminProjectUpdateVisibilityReachesPublicSite(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := loggedInHandler(t, d, store)
+
+	id, err := db.NewContentRepo(d).CreateProject(&db.Project{
+		Name: "zzztoggle", URL: "https://toggle.example.com", Description: "toggle description",
+		Icon: "globe", IsLink: true, URLLabel: "toggle.example.com", Sort: 50, Visible: false,
+	})
+	if err != nil {
+		t.Fatalf("CreateProject: %v", err)
+	}
+	if err := store.Reload(); err != nil {
+		t.Fatalf("Reload: %v", err)
+	}
+	if projectFromSnapshot(t, store, id).Visible {
+		t.Fatal("precondition: snapshot Visible = true, want false")
+	}
+	if strings.Contains(publicLandingBody(t, h), "zzztoggle") {
+		t.Fatal("precondition: hidden project already appears on /")
+	}
+
+	rec := adminRequest(t, d, store, http.MethodPost, "/admin/projects/"+itoa(id), url.Values{
+		"name": {"zzztoggle"}, "url": {"https://toggle.example.com"}, "description": {"toggle description"},
+		"icon": {"globe"}, "url_label": {"toggle.example.com"}, "sort": {"50"}, "visible": {"1"},
+	})
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("enable status = %d, want 303; body=%s", rec.Code, rec.Body.String())
+	}
+	if !projectFromSnapshot(t, store, id).Visible {
+		t.Error("snapshot Visible = false after enabling, want true")
+	}
+	if !strings.Contains(publicLandingBody(t, h), "zzztoggle") {
+		t.Error("newly visible project does not appear on /")
+	}
+
+	rec = adminRequest(t, d, store, http.MethodPost, "/admin/projects/"+itoa(id), url.Values{
+		"name": {"zzztoggle"}, "url": {"https://toggle.example.com"}, "description": {"toggle description"},
+		"icon": {"globe"}, "url_label": {"toggle.example.com"}, "sort": {"50"},
+	})
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("disable status = %d, want 303; body=%s", rec.Code, rec.Body.String())
+	}
+	if projectFromSnapshot(t, store, id).Visible {
+		t.Error("snapshot Visible = true after disabling, want false")
+	}
+	if strings.Contains(publicLandingBody(t, h), "zzztoggle") {
+		t.Error("hidden project still appears on /")
+	}
+}
+
 func TestAdminProjectFormTemplatesRenderCSRFToken(t *testing.T) {
 	d := newTestDB(t)
 	store, _ := NewContentStore(d)
