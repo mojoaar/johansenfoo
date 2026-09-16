@@ -3,6 +3,7 @@ package web
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -30,5 +31,42 @@ func TestHealth(t *testing.T) {
 	}
 	if got := rec.Body.String(); got != "ok\n" {
 		t.Errorf("body = %q, want %q", got, "ok\n")
+	}
+}
+
+func TestStaticStylesheetServed(t *testing.T) {
+	h := newTestHandler(t)
+	req := httptest.NewRequest(http.MethodGet, "/static/style.css", nil)
+	rec := httptest.NewRecorder()
+
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	if ct := rec.Header().Get("Content-Type"); !strings.Contains(ct, "text/css") {
+		t.Errorf("Content-Type = %q, want text/css", ct)
+	}
+	body := rec.Body.String()
+	if strings.Contains(body, ":root {") {
+		t.Error("stylesheet still declares its own token block")
+	}
+	if !strings.Contains(body, `[data-mode="light"]`) {
+		t.Error("stylesheet does not use the data-mode axis")
+	}
+}
+
+func TestStaticAvatarServed(t *testing.T) {
+	h := newTestHandler(t)
+	req := httptest.NewRequest(http.MethodGet, "/static/avatar.png", nil)
+	rec := httptest.NewRecorder()
+
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	if rec.Body.Len() == 0 {
+		t.Error("avatar.png is empty")
 	}
 }

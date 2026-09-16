@@ -28,6 +28,12 @@ func New(d Deps) http.Handler {
 	r.Use(securityHeaders)
 	r.Use(middleware.Timeout(30 * time.Second))
 
+	static, err := staticHandler()
+	if err != nil {
+		panic(err)
+	}
+	r.Handle("/static/*", static)
+
 	r.Get("/health", healthHandler(d))
 
 	return r
