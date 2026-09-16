@@ -23,7 +23,7 @@ func (r *ProfileRepo) Get() (*Profile, error) {
 func (r *ProfileRepo) SocialLinks() ([]SocialLink, error) {
 	rows, err := r.db.Query(`
 		SELECT id, platform, url, label, sort
-		FROM social_link WHERE visible = 1 ORDER BY sort`)
+		FROM social_link WHERE visible = 1 ORDER BY sort, id`)
 	if err != nil {
 		return nil, err
 	}

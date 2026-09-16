@@ -55,6 +55,37 @@ func TestContentRepoOrdering(t *testing.T) {
 	}
 }
 
+func TestContentRepoOrdersByIDAscendingWhenSortTies(t *testing.T) {
+	d := seeded(t)
+
+	if _, err := d.Exec(`CREATE INDEX idx_skill_sort_desc ON skill(sort DESC)`); err != nil {
+		t.Fatalf("create index: %v", err)
+	}
+	if _, err := d.Exec(
+		`INSERT INTO skill (name, sort, visible) VALUES ('tie-a', 100, 1), ('tie-b', 100, 1)`,
+	); err != nil {
+		t.Fatalf("insert tied rows: %v", err)
+	}
+
+	skills, err := NewContentRepo(d).Skills()
+	if err != nil {
+		t.Fatalf("Skills: %v", err)
+	}
+
+	var got []int64
+	for _, s := range skills {
+		if s.Name == "tie-a" || s.Name == "tie-b" {
+			got = append(got, s.ID)
+		}
+	}
+	if len(got) != 2 {
+		t.Fatalf("got %d tied skills, want 2", len(got))
+	}
+	if got[0] >= got[1] {
+		t.Errorf("equal sort rows returned ids %v, want ascending", got)
+	}
+}
+
 func TestThemeRepoGetBySlug(t *testing.T) {
 	d := seeded(t)
 

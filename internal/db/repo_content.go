@@ -9,7 +9,7 @@ func NewContentRepo(d *sql.DB) *ContentRepo { return &ContentRepo{db: d} }
 func (r *ContentRepo) Projects() ([]Project, error) {
 	rows, err := r.db.Query(`
 		SELECT id, name, COALESCE(url, ''), description, icon, is_link, url_label, sort
-		FROM project WHERE visible = 1 ORDER BY sort`)
+		FROM project WHERE visible = 1 ORDER BY sort, id`)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (r *ContentRepo) Projects() ([]Project, error) {
 func (r *ContentRepo) Experience() ([]Experience, error) {
 	rows, err := r.db.Query(`
 		SELECT id, years, role, company, icon, sort
-		FROM experience WHERE visible = 1 ORDER BY sort`)
+		FROM experience WHERE visible = 1 ORDER BY sort, id`)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (r *ContentRepo) Experience() ([]Experience, error) {
 
 func (r *ContentRepo) Skills() ([]Skill, error) {
 	rows, err := r.db.Query(`
-		SELECT id, name, sort FROM skill WHERE visible = 1 ORDER BY sort`)
+		SELECT id, name, sort FROM skill WHERE visible = 1 ORDER BY sort, id`)
 	if err != nil {
 		return nil, err
 	}
