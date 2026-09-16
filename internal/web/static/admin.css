@@ -79,6 +79,81 @@ button {
 button.secondary { background: var(--a-bg3); border: 1px solid var(--a-border); color: var(--a-text); }
 button.danger { background: var(--a-danger); }
 
+.admin-shell { display: flex; min-height: 100vh; }
+
+.admin-side {
+  width: 15rem;
+  flex-shrink: 0;
+  background: var(--a-bg2);
+  border-right: 1px solid var(--a-border);
+  padding: 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.admin-brand { color: var(--a-text); font-weight: 700; text-decoration: none; }
+.admin-nav { display: flex; flex-direction: column; gap: 0.15rem; }
+.admin-nav a {
+  color: var(--a-muted);
+  text-decoration: none;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--a-radius);
+  font-size: 0.85rem;
+}
+.admin-nav a:hover { background: var(--a-bg3); color: var(--a-text); }
+.admin-nav a.active { background: var(--a-bg3); color: var(--a-text); }
+
+.admin-side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.75rem; }
+.admin-side-foot a { color: var(--a-muted); }
+.admin-version { color: var(--a-muted); }
+button.link { background: none; border: 0; color: var(--a-muted); padding: 0; min-height: 0; text-align: left; font-size: 0.75rem; }
+
+.admin-main { flex: 1; padding: 1.5rem 2rem 3rem; min-width: 0; }
+.admin-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.admin-head h1 { font-size: 1.3rem; }
+
+.form-ok {
+  background: color-mix(in srgb, var(--a-accent) 18%, transparent);
+  border: 1px solid var(--a-accent);
+  border-radius: var(--a-radius);
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.card { background: var(--a-bg2); border: 1px solid var(--a-border); border-radius: var(--a-radius); padding: 1.25rem; margin-bottom: 1.25rem; }
+.card h2 { font-size: 1rem; margin-bottom: 0.75rem; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 1rem; }
+.stat { background: var(--a-bg2); border: 1px solid var(--a-border); border-radius: var(--a-radius); padding: 1rem; }
+.stat-value { font-size: 1.6rem; font-weight: 700; display: block; }
+.stat-label { color: var(--a-muted); font-size: 0.75rem; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--a-border); vertical-align: top; }
+th { color: var(--a-muted); font-weight: 400; font-size: 0.75rem; }
+
+.row-actions { display: flex; gap: 0.5rem; align-items: center; }
+.row-actions form { display: inline; }
+.actions { display: flex; gap: 0.75rem; align-items: center; margin-top: 1rem; }
+.inline-form { display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap; }
+.inline-form > div { flex: 1; min-width: 8rem; }
+.inline-form input, .inline-form select { margin-bottom: 0; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+
+.admin-note { color: var(--a-muted); font-size: 0.8rem; }
+
+@media (max-width: 720px) {
+  .admin-shell { flex-direction: column; }
+  .admin-side { width: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+  .admin-nav { flex-direction: row; flex-wrap: wrap; }
+  .admin-side-foot { margin: 0; flex-direction: row; align-items: center; }
+  .admin-main { padding: 1rem; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }

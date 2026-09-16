@@ -89,8 +89,8 @@ func TestValidSessionReachesAdmin(t *testing.T) {
 	if !strings.Contains(body, "<h1>Dashboard</h1>") {
 		t.Errorf("body does not contain the dashboard heading: %s", body)
 	}
-	if !strings.Contains(body, `href="/logout"`) {
-		t.Errorf("body does not contain the sign-out link: %s", body)
+	if !strings.Contains(body, `action="/logout"`) {
+		t.Errorf("body does not contain the sign-out form: %s", body)
 	}
 }
 

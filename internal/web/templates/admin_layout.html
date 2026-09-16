@@ -1,0 +1,47 @@
+{{define "admin_head"}}<!doctype html>
+<html lang="en" data-theme="{{.ThemeSlug}}" data-mode="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>{{.Title}} · johansen.foo admin</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/admin.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body class="admin-body">
+<div class="admin-shell">
+  <aside class="admin-side">
+    <a class="admin-brand" href="/admin">johansen.foo</a>
+    <nav class="admin-nav">
+      <a href="/admin"{{if eq .Section "dashboard"}} class="active"{{end}}>Dashboard</a>
+      <a href="/admin/profile"{{if eq .Section "profile"}} class="active"{{end}}>Profile</a>
+      <a href="/admin/social"{{if eq .Section "social"}} class="active"{{end}}>Social links</a>
+      <a href="/admin/projects"{{if eq .Section "projects"}} class="active"{{end}}>Projects</a>
+      <a href="/admin/experience"{{if eq .Section "experience"}} class="active"{{end}}>Experience</a>
+      <a href="/admin/skills"{{if eq .Section "skills"}} class="active"{{end}}>Skills</a>
+      <a href="/admin/security"{{if eq .Section "security"}} class="active"{{end}}>Security</a>
+    </nav>
+    <div class="admin-side-foot">
+      <a href="/" target="_blank" rel="noopener">View site</a>
+      <span class="admin-version">v{{.Version}}</span>
+      <form method="post" action="/logout">
+        <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+        <button class="link" type="submit">Sign out</button>
+      </form>
+    </div>
+  </aside>
+  <main class="admin-main">
+    <header class="admin-head">
+      <h1>{{.Title}}</h1>
+    </header>
+    {{if .Flash}}<p class="form-ok" role="status">{{.Flash}}</p>{{end}}
+    {{if .Error}}<p class="form-error" role="alert">{{.Error}}</p>{{end}}
+{{end}}
+
+{{define "admin_foot"}}
+  </main>
+</div>
+</body>
+</html>
+{{end}}

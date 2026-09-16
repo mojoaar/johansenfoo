@@ -1,17 +1,23 @@
-{{define "admin_dashboard"}}<!doctype html>
-<html lang="en" data-theme="{{.ThemeSlug}}" data-mode="dark">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="robots" content="noindex">
-  <title>{{.Title}} · johansen.foo</title>
-  <link rel="stylesheet" href="/static/admin.css">
-</head>
-<body>
-  <main>
-    <h1>Dashboard</h1>
-    <p><a href="/logout">Sign out</a></p>
-  </main>
-</body>
-</html>
-{{end}}
+{{define "admin_dashboard"}}{{template "admin_head" .}}
+<section class="stat-grid">
+  <div class="stat"><span class="stat-value">{{len .Projects}}</span><span class="stat-label">projects</span></div>
+  <div class="stat"><span class="stat-value">{{len .Experience}}</span><span class="stat-label">experience entries</span></div>
+  <div class="stat"><span class="stat-value">{{len .Skills}}</span><span class="stat-label">skills</span></div>
+  <div class="stat"><span class="stat-value">{{len .Social}}</span><span class="stat-label">social links</span></div>
+</section>
+
+<section class="card">
+  <h2>Quick actions</h2>
+  <div class="actions">
+    <a href="/admin/profile"><button type="button" class="secondary">Edit profile</button></a>
+    <a href="/admin/projects/new"><button type="button" class="secondary">New project</button></a>
+    <a href="/admin/experience/new"><button type="button" class="secondary">New experience entry</button></a>
+    <a href="/admin/skills"><button type="button" class="secondary">Manage skills</button></a>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Published content</h2>
+  <p class="admin-note">Every change made here is live on the public site on the next page load. Visitor and runtime statistics arrive in a later phase.</p>
+</section>
+{{template "admin_foot" .}}{{end}}
