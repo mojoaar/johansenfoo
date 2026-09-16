@@ -133,6 +133,22 @@ func TestLandingThemeAndModeAreSeparateAttributes(t *testing.T) {
 	}
 }
 
+func TestLandingIncludesUmamiAnalytics(t *testing.T) {
+	h := newTestHandler(t)
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	body := rec.Body.String()
+
+	head := headSection(t, body)
+	if !strings.Contains(head, `src="https://umami.johansen.foo/script.js"`) {
+		t.Error("landing page <head> is missing the umami script src")
+	}
+	if !strings.Contains(head, `data-website-id="427f3677-4613-47a2-8128-d228120321e2"`) {
+		t.Errorf("landing page <head> is missing the umami website id")
+	}
+}
+
 func markupAfter(t *testing.T, body, anchor string) string {
 	t.Helper()
 

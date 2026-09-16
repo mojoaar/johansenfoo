@@ -32,9 +32,9 @@ func TestMeReturnsJSONFromDatabase(t *testing.T) {
 		Skills   []string          `json:"skills"`
 		Social   map[string]string `json:"social"`
 		Projects []struct {
-			Name        string `json:"name"`
-			URL         string `json:"url"`
-			Description string `json:"description"`
+			Name        string  `json:"name"`
+			URL         *string `json:"url"`
+			Description string  `json:"description"`
 		} `json:"projects"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
@@ -53,8 +53,8 @@ func TestMeReturnsJSONFromDatabase(t *testing.T) {
 	if len(got.Projects) != 9 {
 		t.Fatalf("got %d projects, want 9", len(got.Projects))
 	}
-	if got.Projects[3].Name != "homelab" || got.Projects[3].URL != "" {
-		t.Errorf("homelab project = %+v, want empty url", got.Projects[3])
+	if got.Projects[3].Name != "homelab" || got.Projects[3].URL != nil {
+		t.Errorf("homelab project = %+v, want null url", got.Projects[3])
 	}
 	if got.Social["github"] != "https://github.com/mojoaar" {
 		t.Errorf("social github = %q", got.Social["github"])
@@ -72,6 +72,7 @@ func TestMeParityWithLegacyFileStructureOnly(t *testing.T) {
 		Handle   string            `json:"handle"`
 		Location string            `json:"location"`
 		DOB      string            `json:"dob"`
+		Bio      string            `json:"bio"`
 		Skills   []string          `json:"skills"`
 		Social   map[string]string `json:"social"`
 		Projects []struct {
@@ -93,11 +94,12 @@ func TestMeParityWithLegacyFileStructureOnly(t *testing.T) {
 		Handle   string            `json:"handle"`
 		Location string            `json:"location"`
 		DOB      string            `json:"dob"`
+		Bio      string            `json:"bio"`
 		Skills   []string          `json:"skills"`
 		Social   map[string]string `json:"social"`
 		Projects []struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
+			Name string  `json:"name"`
+			URL  *string `json:"url"`
 		} `json:"projects"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
@@ -108,6 +110,9 @@ func TestMeParityWithLegacyFileStructureOnly(t *testing.T) {
 		t.Errorf("profile fields differ: got %q/%q/%q/%q, want %q/%q/%q/%q",
 			got.Name, got.Handle, got.Location, got.DOB,
 			old.Name, old.Handle, old.Location, old.DOB)
+	}
+	if got.Bio != old.Bio {
+		t.Errorf("bio differs:\n got %q\nwant %q", got.Bio, old.Bio)
 	}
 	if !slices.Equal(got.Skills, old.Skills) {
 		t.Errorf("skills differ: got %d entries, want %d", len(got.Skills), len(old.Skills))
@@ -124,15 +129,23 @@ func TestMeParityWithLegacyFileStructureOnly(t *testing.T) {
 		t.Fatalf("got %d projects, want %d", len(got.Projects), len(old.Projects))
 	}
 	for i, p := range old.Projects {
-		wantURL := ""
-		if p.URL != nil {
-			wantURL = *p.URL
-		}
 		if got.Projects[i].Name != p.Name {
 			t.Errorf("project[%d].name = %q, want %q", i, got.Projects[i].Name, p.Name)
 		}
-		if got.Projects[i].URL != wantURL {
-			t.Errorf("project[%d].url = %q, want %q", i, got.Projects[i].URL, wantURL)
+		if p.Name == "homelab" {
+			if p.URL != nil || got.Projects[i].URL != nil {
+				t.Errorf("project[%d] (homelab) url = %v served, %v legacy, want nil on both sides",
+					i, got.Projects[i].URL, p.URL)
+			}
+			continue
+		}
+		if p.URL == nil || got.Projects[i].URL == nil {
+			t.Errorf("project[%d] (%s) url = %v served, %v legacy, want non-nil on both sides",
+				i, p.Name, got.Projects[i].URL, p.URL)
+			continue
+		}
+		if *got.Projects[i].URL != *p.URL {
+			t.Errorf("project[%d].url = %q, want %q", i, *got.Projects[i].URL, *p.URL)
 		}
 	}
 }

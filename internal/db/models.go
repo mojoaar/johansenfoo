@@ -7,6 +7,7 @@ type Profile struct {
 	DOB        string
 	Tagline    string
 	HeroBio    string
+	Bio        string
 	AboutPara1 string
 	AboutPara2 string
 	Avatar     string

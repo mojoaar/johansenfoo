@@ -6,9 +6,9 @@ import (
 )
 
 type meProject struct {
-	Name        string `json:"name"`
-	URL         string `json:"url"`
-	Description string `json:"description"`
+	Name        string  `json:"name"`
+	URL         *string `json:"url"`
+	Description string  `json:"description"`
 }
 
 type meResponse struct {
@@ -33,9 +33,14 @@ func meHandler(d Deps) http.HandlerFunc {
 
 		projects := make([]meProject, 0, len(c.Projects))
 		for _, p := range c.Projects {
+			var url *string
+			if p.URL != "" {
+				u := p.URL
+				url = &u
+			}
 			projects = append(projects, meProject{
 				Name:        p.Name,
-				URL:         p.URL,
+				URL:         url,
 				Description: p.Description,
 			})
 		}
@@ -50,7 +55,7 @@ func meHandler(d Deps) http.HandlerFunc {
 			Handle:   c.Profile.Handle,
 			Location: c.Profile.Location,
 			DOB:      c.Profile.DOB,
-			Bio:      c.Profile.HeroBio,
+			Bio:      c.Profile.Bio,
 			Skills:   skills,
 			Social:   social,
 			Projects: projects,
