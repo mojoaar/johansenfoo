@@ -1,6 +1,11 @@
 package db
 
-import "testing"
+import (
+	"testing"
+	"time"
+
+	"github.com/mojoaar/johansenfoo/internal/theme"
+)
 
 func TestProfileRepoGet(t *testing.T) {
 	d := seeded(t)
@@ -126,5 +131,73 @@ func TestSettingsRepoMissingKeyErrors(t *testing.T) {
 	d := seeded(t)
 	if _, err := NewSettingsRepo(d).Get("does_not_exist"); err == nil {
 		t.Fatal("Get on missing key succeeded, want error")
+	}
+}
+
+func TestSeededThemeMatchesBuiltin(t *testing.T) {
+	d := seeded(t)
+
+	got, err := NewThemeRepo(d).GetBySlug("johansen")
+	if err != nil {
+		t.Fatalf("GetBySlug: %v", err)
+	}
+
+	want := theme.Johansen()
+
+	for _, c := range []struct {
+		label string
+		got   map[string]string
+		want  map[string]string
+	}{
+		{"base", got.TokensBase, want.Base},
+		{"light", got.TokensLight, want.Light},
+		{"dark", got.TokensDark, want.Dark},
+	} {
+		if len(c.got) != len(c.want) {
+			t.Errorf("%s: got %d tokens, want %d", c.label, len(c.got), len(c.want))
+		}
+		for k, v := range c.want {
+			if c.got[k] != v {
+				t.Errorf("%s %s = %q, want %q", c.label, k, c.got[k], v)
+			}
+		}
+	}
+}
+
+func TestJohansenThemeSeedIsIdempotent(t *testing.T) {
+	d := seeded(t)
+
+	if _, err := d.Exec(`DELETE FROM schema_migrations WHERE version = 3`); err != nil {
+		t.Fatalf("delete migration record: %v", err)
+	}
+	if err := Migrate(d); err != nil {
+		t.Fatalf("re-run Migrate: %v", err)
+	}
+
+	if got := count(t, d, "theme"); got != 1 {
+		t.Fatalf("theme count = %d, want 1", got)
+	}
+
+	got, err := NewThemeRepo(d).GetBySlug("johansen")
+	if err != nil {
+		t.Fatalf("GetBySlug: %v", err)
+	}
+	want := theme.Johansen()
+	for k, v := range want.Dark {
+		if got.TokensDark[k] != v {
+			t.Errorf("dark %s = %q, want %q", k, got.TokensDark[k], v)
+		}
+	}
+
+	var createdAt, updatedAt string
+	if err := d.QueryRow(
+		`SELECT created_at, updated_at FROM theme WHERE slug = 'johansen'`,
+	).Scan(&createdAt, &updatedAt); err != nil {
+		t.Fatalf("read timestamps: %v", err)
+	}
+	for _, ts := range []string{createdAt, updatedAt} {
+		if _, err := time.Parse(time.RFC3339, ts); err != nil {
+			t.Errorf("timestamp %q is not RFC 3339 UTC: %v", ts, err)
+		}
 	}
 }
