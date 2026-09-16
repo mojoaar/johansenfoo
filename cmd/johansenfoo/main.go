@@ -45,7 +45,7 @@ func buildHandler(dataDir string) (http.Handler, *config.Config, func(), error) 
 		return nil, nil, nil, fmt.Errorf("migrate: %w", err)
 	}
 
-	content, err := web.LoadContent(d)
+	store, err := web.NewContentStore(d)
 	if err != nil {
 		_ = d.Close()
 		return nil, nil, nil, fmt.Errorf("load content: %w", err)
@@ -54,7 +54,7 @@ func buildHandler(dataDir string) (http.Handler, *config.Config, func(), error) 
 	handler := web.New(web.Deps{
 		DB:      d,
 		Cfg:     cfg,
-		Content: content,
+		Content: store,
 		Version: version,
 		Started: time.Now(),
 	})

@@ -9,13 +9,12 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/mojoaar/johansenfoo/internal/config"
-	"github.com/mojoaar/johansenfoo/internal/db"
 )
 
 type Deps struct {
 	DB      *sql.DB
 	Cfg     *config.Config
-	Content *db.SiteContent
+	Content *ContentStore
 	Version string
 	Started time.Time
 }

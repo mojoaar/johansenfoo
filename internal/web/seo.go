@@ -113,7 +113,12 @@ func personSchema(c *db.SiteContent) template.HTML {
 
 func robotsHandler(d Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body := d.Content.Settings["robots_txt"]
+		c := d.Content.Current()
+		if c == nil {
+			http.Error(w, "content unavailable", http.StatusInternalServerError)
+			return
+		}
+		body := c.Settings["robots_txt"]
 		if body == "" {
 			body = "User-agent: *\nAllow: /\n"
 		}
@@ -124,7 +129,12 @@ func robotsHandler(d Deps) http.HandlerFunc {
 
 func sitemapHandler(d Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		base := d.Content.Settings["canonical_base_url"]
+		c := d.Content.Current()
+		if c == nil {
+			http.Error(w, "content unavailable", http.StatusInternalServerError)
+			return
+		}
+		base := c.Settings["canonical_base_url"]
 		if base == "" {
 			base = "https://johansen.foo"
 		}

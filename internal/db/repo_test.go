@@ -216,3 +216,26 @@ func TestJohansenThemeSeedIsIdempotent(t *testing.T) {
 		}
 	}
 }
+
+func TestSettingsRepoSet(t *testing.T) {
+	d := seeded(t)
+	r := NewSettingsRepo(d)
+
+	if err := r.Set("site_title", "New Title"); err != nil {
+		t.Fatalf("Set existing: %v", err)
+	}
+	got, err := r.Get("site_title")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got != "New Title" {
+		t.Errorf("site_title = %q, want %q", got, "New Title")
+	}
+
+	if err := r.Set("brand_new_key", "hello"); err != nil {
+		t.Fatalf("Set new: %v", err)
+	}
+	if got, err = r.Get("brand_new_key"); err != nil || got != "hello" {
+		t.Errorf("brand_new_key = %q, %v; want %q, nil", got, err, "hello")
+	}
+}

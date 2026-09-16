@@ -1,6 +1,7 @@
 package web
 
 import (
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -15,19 +16,11 @@ import (
 func newTestHandler(t *testing.T) http.Handler {
 	t.Helper()
 
-	path := filepath.Join(t.TempDir(), "test.db")
-	d, err := db.Open(path)
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { _ = d.Close() })
-	if err := db.Migrate(d); err != nil {
-		t.Fatalf("db.Migrate: %v", err)
-	}
+	d := newTestDB(t)
 
-	content, err := LoadContent(d)
+	content, err := NewContentStore(d)
 	if err != nil {
-		t.Fatalf("LoadContent: %v", err)
+		t.Fatalf("NewContentStore: %v", err)
 	}
 
 	return New(Deps{
@@ -89,4 +82,18 @@ func TestStaticAvatarServed(t *testing.T) {
 	if rec.Body.Len() == 0 {
 		t.Error("avatar.png is empty")
 	}
+}
+
+func newTestDB(t *testing.T) *sql.DB {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "test.db")
+	d, err := db.Open(path)
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	t.Cleanup(func() { _ = d.Close() })
+	if err := db.Migrate(d); err != nil {
+		t.Fatalf("db.Migrate: %v", err)
+	}
+	return d
 }

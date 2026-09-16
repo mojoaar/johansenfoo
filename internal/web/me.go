@@ -24,7 +24,11 @@ type meResponse struct {
 
 func meHandler(d Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		c := d.Content
+		c := d.Content.Current()
+		if c == nil {
+			http.Error(w, "content unavailable", http.StatusInternalServerError)
+			return
+		}
 
 		skills := make([]string, 0, len(c.Skills))
 		for _, s := range c.Skills {

@@ -66,10 +66,14 @@ func themeFromRow(row db.Theme) theme.Theme {
 
 func landingHandler(d Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		c := d.Content
-		css := theme.CSS(themeFromRow(c.Theme))
+		c := d.Content.Current()
+		if c == nil {
+			http.Error(w, "content unavailable", http.StatusInternalServerError)
+			return
+		}
+		themeCSS := theme.CSS(themeFromRow(c.Theme))
 		meta := resolveMeta(c, "/")
-		data := newPage(c, css, meta, personSchema(c))
+		data := newPage(c, themeCSS, meta, personSchema(c))
 		renderPage(w, "base", data)
 	}
 }
