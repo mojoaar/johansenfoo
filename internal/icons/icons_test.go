@@ -27,8 +27,34 @@ func TestEveryIconNameResolves(t *testing.T) {
 		if !strings.Contains(svg, `class="project-icon"`) {
 			t.Errorf("icon %q is missing the supplied class", name)
 		}
-		if fixedDimensionRE.MatchString(svg) {
-			t.Errorf("icon %q still carries fixed dimensions", name)
+		root := svg[:strings.IndexByte(svg, '>')+1]
+		if fixedDimensionRE.MatchString(root) {
+			t.Errorf("icon %q still carries fixed dimensions on its root tag", name)
+		}
+	}
+}
+
+func TestInnerGeometryIsPreserved(t *testing.T) {
+	cases := []struct {
+		name  string
+		attrs []string
+	}{
+		{"briefcase", []string{`width="20"`, `height="14"`}},
+		{"mail", []string{`width="20"`, `height="16"`}},
+		{"server", []string{`width="20"`, `height="8"`}},
+		{"square-terminal", []string{`width="18"`, `height="18"`}},
+	}
+	for _, tc := range cases {
+		svg := string(Inline(tc.name, "project-icon"))
+		end := strings.IndexByte(svg, '>')
+		if end < 0 {
+			t.Fatalf("icon %q has no root tag", tc.name)
+		}
+		inner := svg[end+1:]
+		for _, attr := range tc.attrs {
+			if !strings.Contains(inner, attr) {
+				t.Errorf("icon %q lost inner geometry %s: %q", tc.name, attr, inner)
+			}
 		}
 	}
 }

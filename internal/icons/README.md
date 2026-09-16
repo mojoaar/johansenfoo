@@ -8,31 +8,39 @@ path adds no third-party origin.
 
 | Set | Package | Version | Licence |
 | --- | --- | --- | --- |
-| Outline icons | [`lucide-static`](https://www.npmjs.com/package/lucide-static) | `1.46.0` | ISC (MIT for Feather-derived glyphs) |
+| Lucide outline icons (twelve shared glyphs) | [`lucide-static`](https://www.npmjs.com/package/lucide-static) | `0.503.0` | ISC (MIT for Feather-derived glyphs) |
+| `arrow-up-right-from-square` | [`lucide-static`](https://www.npmjs.com/package/lucide-static) | `1.46.0` | ISC |
 | Brand icons | [`simple-icons`](https://www.npmjs.com/package/simple-icons) | `13.21.0` | CC0-1.0 |
 
-Each vendored `.svg` keeps the upstream `@license` comment header it was
-downloaded with. `Inline` strips that leading comment from the rendered
-output.
+Lucide files keep the upstream `@license` comment header they were downloaded
+with; Simple Icons files carry no such header upstream. `Inline` starts the
+rendered output at the `<svg>` tag, so any leading comment is dropped.
 
-### Deviations from the original task draft
+### Version selection
 
-The task draft pinned `lucide-static@0.503.0` and `simple-icons@15.0.0`, but
-neither pin can supply the full icon set:
+Parity with the live site governs. The live site drew its outline glyphs from
+`lucide-static@0.503.0`, so the twelve shared glyphs are vendored from that
+exact version. Five of them — `message-square`, `mail`, `flame`, `kanban`, and
+`brain` — were redrawn upstream between `0.503.0` and `1.46.0`; taking them
+from `1.46.0` would render them differently from the live site. The other
+seven are byte-identical across the two versions.
 
-- `lucide-static@0.503.0` has no `arrow-up-right-from-square.svg` (it appears
-  only in the `1.x` line). `1.46.0` is the current release and still ships all
-  twelve other Lucide glyphs unchanged.
-- `simple-icons` removed `linkedin.svg` in `14.0.0`; `15.0.0` and later no
-  longer contain it. `13.21.0` is the last release that ships LinkedIn and it
-  also provides `bluesky`, `mastodon`, and `github`.
+`arrow-up-right-from-square.svg` does not exist at `0.503.0` (the name appears
+only in the `1.x` line), so that single glyph comes from `1.46.0`.
+
+Simple Icons are a deliberate, accepted deviation: the live site used Font
+Awesome brand glyphs, so there is no parity constraint on the brand marks.
+`simple-icons` removed `linkedin.svg` in `14.0.0`; `13.21.0` is the last release
+that ships LinkedIn and it also provides `bluesky`, `mastodon`, and `github`.
 
 ## Icons
 
+`lucide-static@0.503.0`:
+`brain`, `briefcase`, `database`, `flame`, `globe`, `kanban`, `mail`,
+`message-square`, `server`, `shield`, `shield-check`, `square-terminal`.
+
 `lucide-static@1.46.0`:
-`arrow-up-right-from-square`, `brain`, `briefcase`, `database`, `flame`,
-`globe`, `kanban`, `mail`, `message-square`, `server`, `shield`,
-`shield-check`, `square-terminal`.
+`arrow-up-right-from-square`.
 
 `simple-icons@13.21.0`:
 `bluesky`, `github`, `linkedin`, `mastodon`.

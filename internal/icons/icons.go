@@ -44,8 +44,6 @@ func render(body, class string) template.HTML {
 	}
 	body = body[start:]
 
-	body = dimensionRE.ReplaceAllString(body, "")
-	body = classRE.ReplaceAllString(body, "")
 	body = fillRE.ReplaceAllStringFunc(body, func(match string) string {
 		if strings.Contains(match, `"none"`) {
 			return match
@@ -57,9 +55,13 @@ func render(body, class string) template.HTML {
 	if end < 0 {
 		return ""
 	}
+
+	root := dimensionRE.ReplaceAllString(body[:end], "")
+	root = classRE.ReplaceAllString(root, "")
+
 	attrs := ` class="` + class + `" aria-hidden="true" focusable="false"`
-	if !strings.Contains(body[:end], "fill=") {
+	if !strings.Contains(root, "fill=") {
 		attrs += ` fill="currentColor"`
 	}
-	return template.HTML(body[:end] + attrs + body[end:])
+	return template.HTML(root + attrs + body[end:])
 }
