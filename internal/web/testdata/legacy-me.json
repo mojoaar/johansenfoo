@@ -1,0 +1,69 @@
+{
+  "name": "Morten Johansen",
+  "handle": "mojoaar",
+  "location": "Denmark",
+  "dob": "1980-08-13",
+  "bio": "Enterprise IT leader with 18 years of experience designing and operating complex systems across hybrid environments. I lead a global team, operate cloud infrastructure, and automate everything I can — Terraform, OpenTofu, Python, Go, PowerShell. Passionate about ITSM/ESM done right and making technology invisible so people can do their best work.",
+  "skills": [
+    "ITSM", "ESM", "ServiceNow", "Jira", "ITIL",
+    "Azure", "Google Cloud", "VMware", "KVM", "Proxmox",
+    "Terraform", "OpenTofu", "IaC", "Automation", "Scripting",
+    "Python", "Go", "PowerShell",
+    "Active Directory", "Entra ID",
+    "Linux", "Windows", "MacOS",
+    "AI", "Leadership", "Management", "Budget", "Hosting", "Web Development", "Presenting"
+  ],
+  "social": {
+    "bluesky": "https://bsky.app/profile/johansen.foo",
+    "linkedin": "https://linkedin.com/in/mojoaar",
+    "mastodon": "https://floss.social/@mojoaar",
+    "github": "https://github.com/mojoaar"
+  },
+  "projects": [
+    {
+      "name": "atlascmdb",
+      "url": "https://github.com/mojoaar/atlascmdb",
+      "description": "Open-source CMDB built on Next.js with entity management, relationship graphing, TOTP MFA, SSO/SCIM, rack layouts, and bulk import."
+    },
+    {
+      "name": "clutch",
+      "url": "https://github.com/mojoaar/clutch",
+      "description": "Cross-platform desktop AI chat — multi-provider streaming, markdown, file attachments, web fetching, 8 themes, and i18n. Tauri v2 + SvelteKit."
+    },
+    {
+      "name": "echo",
+      "url": "https://echo.johansen.foo",
+      "description": "What you look like from the internet's perspective — WAN IP, ISP, location, timezone and more. No server. No tracking. Pure client-side."
+    },
+    {
+      "name": "homelab",
+      "url": null,
+      "description": "Four-node Proxmox VE 9 cluster (dagobah, geonosis, mendavi, serenno) running Ceph storage, SDN, HA, and a mix of LXC containers and QEMU VMs."
+    },
+    {
+      "name": "icloud-mailflow",
+      "url": "https://github.com/mojoaar/icloud-mailflow",
+      "description": "IMAP rules engine for iCloud Mail — AND/OR logic, 13 operators, auto-reply, webhooks, dry-run, and MCP server. Go + HTMX."
+    },
+    {
+      "name": "ignite",
+      "url": "https://ignite.johansen.foo",
+      "description": "Provisioning with a heartbeat — AI-guided conversational interviews that generate project specs, agent guides, implementation plans, and READMEs. Wails desktop GUI."
+    },
+    {
+      "name": "kanzo",
+      "url": "https://github.com/mojoaar/kanzo",
+      "description": "Kanban board with configurable columns, drag & drop, GitHub sync, people & category systems, 13 themes, and full PWA support."
+    },
+    {
+      "name": "krypt",
+      "url": "https://krypt.johansen.foo",
+      "description": "Terminal password manager with AES-256-GCM encryption, Argon2id key derivation, optional 2FA, and GitHub Gist sync. Built with Bubble Tea."
+    },
+    {
+      "name": "mindmatrix",
+      "url": "https://mindmatrix.johansen.foo",
+      "description": "Markdown-first, self-hosted, multi-user knowledge hub with realtime collaboration, backlinks, version history, plugins, and full REST API."
+    }
+  ]
+}

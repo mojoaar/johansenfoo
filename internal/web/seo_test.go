@@ -51,7 +51,7 @@ func TestMeReturnsJSONFromDatabase(t *testing.T) {
 		t.Errorf("got %d skills, want 30", len(got.Skills))
 	}
 	if len(got.Projects) != 9 {
-		t.Errorf("got %d projects, want 9", len(got.Projects))
+		t.Fatalf("got %d projects, want 9", len(got.Projects))
 	}
 	if got.Projects[3].Name != "homelab" || got.Projects[3].URL != "" {
 		t.Errorf("homelab project = %+v, want empty url", got.Projects[3])
@@ -62,10 +62,9 @@ func TestMeReturnsJSONFromDatabase(t *testing.T) {
 }
 
 func TestMeParityWithLegacyFileStructureOnly(t *testing.T) {
-	const legacyPath = "/Users/mojoaar/Development/johansen_landing/me"
-	raw, err := os.ReadFile(legacyPath)
+	raw, err := os.ReadFile("testdata/legacy-me.json")
 	if err != nil {
-		t.Skipf("legacy me file unavailable, skipping structural parity check: %v", err)
+		t.Fatalf("read legacy me fixture: %v", err)
 	}
 
 	var old struct {

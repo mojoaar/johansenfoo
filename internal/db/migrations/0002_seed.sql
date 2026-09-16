@@ -76,7 +76,7 @@ INSERT INTO settings (key, value) VALUES
     ('site_title',           'Morten Johansen | johansen.foo'),
     ('title_template',       '%s | johansen.foo'),
     ('seo_description',      'Morten Johansen - Building and running complex infrastructure & cloud environments for 18+ years. Global ops leader, open-source tinkerer, and automation enthusiast.'),
-    ('og_image_url',         'https://johansen.foo/avatar.png'),
+    ('og_image_url',         'https://johansen.foo/static/avatar.png'),
     ('og_type',              'website'),
     ('twitter_card',         'summary'),
     ('canonical_base_url',   'https://johansen.foo'),
