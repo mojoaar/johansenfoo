@@ -27,6 +27,7 @@ func New(d Deps) http.Handler {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(securityHeaders)
+	r.Use(methodOverride)
 	r.Use(csrfMiddleware)
 	r.Use(middleware.Timeout(30 * time.Second))
 
