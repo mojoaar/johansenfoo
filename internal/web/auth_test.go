@@ -166,6 +166,7 @@ func TestLogoutClearsSession(t *testing.T) {
 		t.Fatalf("Create: %v", err)
 	}
 	req := httptest.NewRequest(http.MethodPost, "/logout", nil)
+	req.Header.Set("HX-Request", "true")
 	req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: "sess-1"})
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)

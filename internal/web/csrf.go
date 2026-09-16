@@ -1,6 +1,7 @@
 package web
 
 import (
+	"crypto/subtle"
 	"net/http"
 	"strings"
 )
@@ -31,10 +32,10 @@ func csrfExempt(r *http.Request) bool {
 		return true
 	}
 	switch r.URL.Path {
-	case "/login", "/setup", "/logout":
+	case "/login", "/setup":
 		return true
 	}
-	return strings.HasPrefix(r.URL.Path, "/mcp")
+	return r.URL.Path == "/mcp" || strings.HasPrefix(r.URL.Path, "/mcp/")
 }
 
 func csrfMiddleware(next http.Handler) http.Handler {
@@ -48,7 +49,11 @@ func csrfMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		cookie, err := r.Cookie(csrfCookieName)
-		if err != nil || cookie.Value == "" || r.FormValue("csrf_token") != cookie.Value {
+		if err != nil || cookie.Value == "" {
+			http.Error(w, "invalid csrf token", http.StatusForbidden)
+			return
+		}
+		if subtle.ConstantTimeCompare([]byte(r.PostFormValue("csrf_token")), []byte(cookie.Value)) != 1 {
 			http.Error(w, "invalid csrf token", http.StatusForbidden)
 			return
 		}
@@ -60,8 +65,9 @@ func methodOverride(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			if err := r.ParseForm(); err == nil {
-				if m := r.Form.Get("_method"); m != "" {
-					r.Method = strings.ToUpper(m)
+				switch m := strings.ToUpper(r.Form.Get("_method")); m {
+				case http.MethodPut, http.MethodPatch, http.MethodDelete:
+					r.Method = m
 				}
 			}
 		}
