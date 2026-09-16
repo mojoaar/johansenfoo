@@ -2,6 +2,7 @@ package web
 
 import (
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"errors"
 	"net"
@@ -74,6 +75,10 @@ func currentSession(d Deps, r *http.Request) bool {
 		return false
 	}
 	return s.ExpiresAt.After(time.Now().UTC())
+}
+
+func pruneSessions(d *sql.DB) (int64, error) {
+	return db.NewSessionRepo(d).DeleteExpired()
 }
 
 func authMiddleware(d Deps) func(http.Handler) http.Handler {

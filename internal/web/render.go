@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bytes"
 	"embed"
 	"html/template"
 	"net/http"
@@ -22,7 +23,6 @@ type page struct {
 	HeroBio        template.HTML
 	AboutPara1     template.HTML
 	AboutPara2     template.HTML
-	SiteName       string
 	ThemeSlug      string
 	ThemeCSS       template.CSS
 	Meta           Meta
@@ -51,10 +51,13 @@ var templates = template.Must(
 )
 
 func renderPage(w http.ResponseWriter, name string, data page) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := templates.ExecuteTemplate(w, name, data); err != nil {
+	var buf bytes.Buffer
+	if err := templates.ExecuteTemplate(&buf, name, data); err != nil {
 		http.Error(w, "template error", http.StatusInternalServerError)
+		return
 	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = w.Write(buf.Bytes())
 }
 
 func newPage(c *db.SiteContent, themeCSS string, meta Meta, structured template.HTML) page {
@@ -129,11 +132,14 @@ func NewAdminPage(d Deps, r *http.Request, section, title string) page {
 
 func renderAdmin(w http.ResponseWriter, r *http.Request, name string, data page, status ...int) {
 	data.CSRF = ensureCSRFCookie(w, r)
+	var buf bytes.Buffer
+	if err := templates.ExecuteTemplate(&buf, name, data); err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if len(status) > 0 {
 		w.WriteHeader(status[0])
 	}
-	if err := templates.ExecuteTemplate(w, name, data); err != nil {
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	_, _ = w.Write(buf.Bytes())
 }

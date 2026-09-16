@@ -22,9 +22,9 @@ type Deps struct {
 func New(d Deps) http.Handler {
 	r := chi.NewRouter()
 
+	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(securityHeaders)
 	r.Use(methodOverride)
@@ -78,6 +78,14 @@ func New(d Deps) http.Handler {
 		ar.Post("/security/password", adminPasswordChangeHandler(d))
 		ar.Post("/security/apikey", adminAPIKeyRegenerateHandler(d))
 	})
+
+	go func() {
+		ticker := time.NewTicker(time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			_, _ = pruneSessions(d.DB)
+		}
+	}()
 
 	return r
 }

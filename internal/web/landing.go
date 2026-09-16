@@ -9,11 +9,12 @@ import (
 )
 
 func LoadContent(d *sql.DB) (*db.SiteContent, error) {
-	profile, err := db.NewProfileRepo(d).Get()
+	profileRepo := db.NewProfileRepo(d)
+	profile, err := profileRepo.Get()
 	if err != nil {
 		return nil, err
 	}
-	social, err := db.NewProfileRepo(d).SocialLinks()
+	social, err := profileRepo.SocialLinks()
 	if err != nil {
 		return nil, err
 	}
