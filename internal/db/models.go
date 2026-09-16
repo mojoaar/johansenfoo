@@ -31,6 +31,7 @@ type Project struct {
 	IsLink      bool
 	URLLabel    string
 	Sort        int
+	Visible     bool
 }
 
 type Experience struct {

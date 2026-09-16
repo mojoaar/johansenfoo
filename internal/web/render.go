@@ -60,7 +60,7 @@ func newPage(c *db.SiteContent, themeCSS string, meta Meta, structured template.
 	return page{
 		Profile:        c.Profile,
 		Social:         visibleSocial(c.Social),
-		Projects:       c.Projects,
+		Projects:       visibleProjects(c.Projects),
 		Experience:     c.Experience,
 		Skills:         c.Skills,
 		HeroBio:        markdown.Render(c.Profile.HeroBio),
@@ -78,6 +78,16 @@ func visibleSocial(links []db.SocialLink) []db.SocialLink {
 	for _, l := range links {
 		if l.Visible {
 			out = append(out, l)
+		}
+	}
+	return out
+}
+
+func visibleProjects(projects []db.Project) []db.Project {
+	out := make([]db.Project, 0, len(projects))
+	for _, p := range projects {
+		if p.Visible {
+			out = append(out, p)
 		}
 	}
 	return out

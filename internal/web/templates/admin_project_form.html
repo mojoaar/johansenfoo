@@ -1,0 +1,21 @@
+{{define "admin_project_form"}}{{template "admin_head" .}}
+<form method="post" action="{{if .IsNew}}/admin/projects{{else}}/admin/projects/{{.Project.ID}}{{end}}">
+  <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+  <section class="card">
+    <div class="grid-2">
+      <div><label for="name">Name</label><input type="text" id="name" name="name" value="{{.Project.Name}}" required></div>
+      <div><label for="icon">Icon name</label><input type="text" id="icon" name="icon" value="{{.Project.Icon}}" placeholder="globe"></div>
+      <div><label for="url">URL (leave empty for a non-link card)</label><input type="text" id="url" name="url" value="{{.Project.URL}}"></div>
+      <div><label for="url_label">URL label</label><input type="text" id="url_label" name="url_label" value="{{.Project.URLLabel}}"></div>
+      <div><label for="sort">Sort</label><input type="number" id="sort" name="sort" value="{{.Project.Sort}}"></div>
+      <div><label><input type="checkbox" name="visible" value="1"{{if or .IsNew .Project.Visible}} checked{{end}}> visible</label></div>
+    </div>
+    <label for="description">Description</label>
+    <textarea id="description" name="description" required>{{.Project.Description}}</textarea>
+  </section>
+  <div class="actions">
+    <button type="submit">Save</button>
+    <a href="/admin/projects"><button type="button" class="secondary">Cancel</button></a>
+  </div>
+</form>
+{{template "admin_foot" .}}{{end}}

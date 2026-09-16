@@ -1,0 +1,30 @@
+{{define "admin_projects"}}{{template "admin_head" .}}
+<section class="card">
+  <div class="actions">
+    <a href="/admin/projects/new"><button type="button">New project</button></a>
+  </div>
+  <table>
+    <thead><tr><th>Sort</th><th>Name</th><th>URL</th><th>Icon</th><th>Visible</th><th></th></tr></thead>
+    <tbody>
+    {{range .Projects}}
+      <tr>
+        <td>{{.Sort}}</td>
+        <td>{{.Name}}</td>
+        <td>{{if .URL}}{{.URL}}{{else}}&mdash;{{end}}</td>
+        <td>{{.Icon}}</td>
+        <td>{{if .Visible}}yes{{else}}no{{end}}</td>
+        <td class="row-actions">
+          <a href="/admin/projects/{{.ID}}"><button type="button" class="secondary">Edit</button></a>
+          <form method="post" action="/admin/projects/{{.ID}}/delete">
+            <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+            <button type="submit" class="danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {{else}}
+      <tr><td colspan="6">No projects.</td></tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{template "admin_foot" .}}{{end}}

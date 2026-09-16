@@ -58,6 +58,12 @@ func New(d Deps) http.Handler {
 		ar.Post("/social", adminSocialCreateHandler(d))
 		ar.Post("/social/{id}", adminSocialUpdateHandler(d))
 		ar.Post("/social/{id}/delete", adminSocialDeleteHandler(d))
+		ar.Get("/projects", adminProjectsGetHandler(d))
+		ar.Get("/projects/new", adminProjectNewHandler(d))
+		ar.Post("/projects", adminProjectCreateHandler(d))
+		ar.Get("/projects/{id}", adminProjectEditHandler(d))
+		ar.Post("/projects/{id}", adminProjectUpdateHandler(d))
+		ar.Post("/projects/{id}/delete", adminProjectDeleteHandler(d))
 	})
 
 	return r

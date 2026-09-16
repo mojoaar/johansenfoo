@@ -37,6 +37,9 @@ func meHandler(d Deps) http.HandlerFunc {
 
 		projects := make([]meProject, 0, len(c.Projects))
 		for _, p := range c.Projects {
+			if !p.Visible {
+				continue
+			}
 			var url *string
 			if p.URL != "" {
 				u := p.URL
