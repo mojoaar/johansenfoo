@@ -223,7 +223,7 @@ Go process figures — goroutines, heap, GC, uptime — come free from the exist
 - bcrypt admin password; a session cookie for `/admin`.
 - A server-generated, regenerable API key, shown once, used as a Bearer token for MCP and the REST API.
 - CSRF protection on stateful POSTs: skipped for GET/HEAD, for requests with `HX-Request: true`, and for `/login`, `/setup`, and `/mcp`. Cookie name `johansenfoo_csrf`, `SameSite=Strict`, `HttpOnly`, `Secure` when behind TLS.
-- Rate limiting on login and on MCP (100 requests per minute per IP).
+- Rate limiting on login (10 attempts per 15 minutes per IP) and on MCP (100 requests per minute per IP).
 - Security headers and a 30-second request timeout.
 
 **Open question:** the date of birth stays exposed in `/me` for parity with the current endpoint. This is flagged in case it should be dropped instead.
