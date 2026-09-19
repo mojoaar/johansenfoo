@@ -15,6 +15,7 @@ func NewServer(b Backend, version string) *server.MCPServer {
 		server.WithToolCapabilities(false),
 		server.WithRecovery(),
 	)
+	registerContentTools(s, b)
 	return s
 }
 
