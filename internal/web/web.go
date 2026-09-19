@@ -29,6 +29,7 @@ func New(d Deps) http.Handler {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RealIP)
 	r.Use(securityHeaders)
+	r.Use(newPageViewMiddleware(d))
 	r.Use(methodOverride)
 	r.Use(csrfMiddleware)
 	r.Use(middleware.Timeout(30 * time.Second))
@@ -188,6 +189,7 @@ func New(d Deps) http.Handler {
 	})
 
 	startSessionPruner(d.DB, time.Hour)
+	startStatsPruner(d.DB, 24*time.Hour)
 
 	mcpHandler := mcp.Handler(mcp.Deps{
 		DB:      d.DB,
