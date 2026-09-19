@@ -17,7 +17,7 @@ CGO_ENABLED=0 go run ./cmd/johansenfoo -data=/tmp/jf   # run against a scratch d
 - Module `github.com/mojoaar/johansenfoo`, Go 1.25.5, must build and test with `CGO_ENABLED=0`.
 - No third-party origin on the runtime critical path other than the Umami snippet. HTMX is vendored
   at `/static/htmx.min.js`; no CDN scripts or fonts.
-- Migrations are append-only: `0001`-`0005` stay byte-identical. Add the next free number (`0006`)
+- Migrations are append-only: `0001`-`0006` stay byte-identical. Add the next free number (`0007`)
   only when required.
 - All timestamps are RFC 3339 UTC via `strftime('%Y-%m-%dT%H:%M:%SZ','now')`, never `datetime('now')`.
 - All SQL is parameterized.
@@ -36,8 +36,9 @@ internal/db/repo_content.go project, experience and skill repository
 internal/db/repo_settings.go key/value settings repository
 internal/db/repo_theme.go   theme repository
 internal/db/repo_session.go session repository: Create, Get, Delete, DeleteExpired
-internal/db/backup.go       whole-content export/import snapshot
-internal/markdown/          goldmark wrapper (GFM, sanitised)
+internal/db/repo_post.go    post, tag and post_tag repository
+internal/db/backup.go       whole-content export/import snapshot (includes posts/tags)
+internal/markdown/          goldmark + GFM + Chroma class-based highlighting
 internal/theme/             token vocabulary, defaults, validation, CSS emission
 internal/icons/             vendored SVGs, exposed to templates as inline SVG
 internal/web/               chi router, middleware, handlers and the content snapshot
@@ -58,6 +59,11 @@ internal/web/api_admin_social.go   admin social-link REST handlers
 internal/web/api_admin_content.go  generic admin REST CRUD for projects/experience/skills
 internal/web/api_admin_settings.go settings REST handlers
 internal/web/api_admin_backup.go   export/import REST handlers
+internal/web/posts.go       public post index, single post, tag archive, date helpers
+internal/web/feed.go        RSS 2.0 feed
+internal/web/admin_posts.go admin post CRUD and publish controls
+internal/web/api_posts.go   public posts REST handlers
+internal/web/api_admin_posts.go admin posts REST handlers
 internal/web/admin.go       admin shell and dashboard
 internal/web/admin_profile.go   profile and social-link handlers
 internal/web/admin_projects.go  project CRUD handlers
@@ -69,6 +75,7 @@ internal/web/static/        embedded style.css, admin.css, fonts, htmx, favicons
 ```
 
 Public routes: `GET /`, `GET /me`, `GET /robots.txt`, `GET /sitemap.xml`, `GET /health`,
+`GET /posts`, `GET /posts/{slug}`, `GET /tags/{slug}`, `GET /feed.xml`,
 `GET|POST /setup`, `GET|POST /login`, `POST /logout`.
 
 Admin routes (all behind authMiddleware; the templates post plain forms, and the PUT/DELETE
@@ -94,6 +101,12 @@ variants are reachable via the `_method` override):
   GET  /admin/security
                                POST|PUT /admin/security/password
                                POST|PUT /admin/security/apikey
+  GET  /admin/posts            POST /admin/posts
+  GET  /admin/posts/new
+  GET  /admin/posts/{id}       POST|PUT /admin/posts/{id}
+                               POST|DELETE /admin/posts/{id}/delete
+                               POST|PUT /admin/posts/{id}/publish
+                               POST|PUT /admin/posts/{id}/unpublish
 Auth routes: GET|POST /setup, GET|POST /login, POST /logout
 ```
 
@@ -101,11 +114,14 @@ API routes:
 
 ```
   Public: GET /api/v1/profile|projects|experience|skills|theme
+  Public: GET /api/v1/posts (?page,&tag=) and /api/v1/posts/{slug}
   Admin (all behind apiAuthMiddleware; Bearer API key or admin session cookie):
     GET|PUT      /api/v1/admin/profile
     GET|POST     /api/v1/admin/social            PUT|DELETE /api/v1/admin/social/{id}
     GET|POST     /api/v1/admin/projects|experience|skills
     GET|PUT|DELETE /api/v1/admin/projects|experience|skills/{id}
+    GET|POST     /api/v1/admin/posts             GET|PUT|DELETE /api/v1/admin/posts/{id}
+    POST         /api/v1/admin/posts/{id}/publish   /unpublish
     PUT          /api/v1/admin/settings/posts    PUT /api/v1/admin/settings/theme
     GET          /api/v1/admin/export            POST /api/v1/admin/import
 ```
@@ -118,6 +134,10 @@ API routes:
 - Repo list methods return every row plus a `Visible` field; visibility is filtered in
   `render.go` / `me.go` / `seo.go` / `api_public.go`, never with `WHERE visible = 1`.
 - Public `/api/v1` reads filter `Visible`; admin `/api/v1/admin/*` reads return every row.
+- Public post surfaces (`/posts`, `/posts/{slug}`, `/tags/{slug}`, `/feed.xml`, `/api/v1/posts*`,
+  `sitemap.xml`) only ever read `status = 'published'` posts; a draft slug returns 404.
+- `posts_enabled=false` 404s every public post surface and hides the nav link, but never deletes
+  data. `sitemap_enabled=false` 404s `/sitemap.xml`.
 - Every successful admin API write calls `d.Content.Reload()`, exactly like the HTML admin handlers.
 - `/api/` paths are CSRF-exempt; API write safety rests on Bearer/JSON rather than a form token.
 - Documentation is part of the definition of done: a new feature updates the README feature list, a

@@ -20,8 +20,10 @@ exposes a bcrypt-protected admin surface for editing it.
 - CSRF protection on stateful requests, a login rate limiter, and hourly pruning of expired
   sessions.
 - A versioned REST API at `/api/v1`: unauthenticated reads for the profile, projects, experience,
-  skills and theme, plus an admin surface authenticated by the API key or an admin session, with
-  full CRUD and content export/import.
+  skills, theme and posts, plus an admin surface authenticated by the API key or an admin session,
+  with full CRUD and content export/import.
+- A Posts system: markdown posts with server-side syntax highlighting, tags, drafts, hero images,
+  pagination, an RSS feed at `/feed.xml`, and a `posts_enabled` kill switch.
 - No third-party origins on the critical path other than the Umami analytics snippet: icons are
   rendered as inline SVG, JetBrains Mono is self-hosted, and HTMX is vendored at
   `/static/htmx.min.js`.
@@ -51,6 +53,8 @@ Public
   GET  /api/v1/experience
   GET  /api/v1/skills
   GET  /api/v1/theme
+  GET  /api/v1/posts                            ?page=&tag=
+  GET  /api/v1/posts/{slug}
 
 Admin (Bearer or session)
   GET|PUT      /api/v1/admin/profile
@@ -58,6 +62,9 @@ Admin (Bearer or session)
   GET|POST     /api/v1/admin/projects          GET|PUT|DELETE /api/v1/admin/projects/{id}
   GET|POST     /api/v1/admin/experience        GET|PUT|DELETE /api/v1/admin/experience/{id}
   GET|POST     /api/v1/admin/skills            GET|PUT|DELETE /api/v1/admin/skills/{id}
+  GET|POST     /api/v1/admin/posts             GET|PUT|DELETE /api/v1/admin/posts/{id}
+  POST         /api/v1/admin/posts/{id}/publish
+  POST         /api/v1/admin/posts/{id}/unpublish
   PUT          /api/v1/admin/settings/posts    {"enabled": bool}
   PUT          /api/v1/admin/settings/theme    {"slug": string}
   GET          /api/v1/admin/export
@@ -71,6 +78,26 @@ the changed one. `GET /api/v1/admin/export` produces a whole-content snapshot wi
 hash and API key stripped; posting that snapshot back to `/api/v1/admin/import` restores the
 content in one transaction. An import must carry every content section and a valid `active_theme`,
 or it is rejected without changing anything.
+
+## Posts
+
+Posts are authored at `/admin/posts`, where each post has a title, slug, summary, markdown body,
+tags, an optional hero image, SEO fields, and a draft/published status. Only published posts are
+visible on the public surface.
+
+```
+  GET /posts                 paginated index, ?page=, ?tag=
+  GET /posts/{slug}          single published post
+  GET /tags/{slug}           tag archive
+  GET /feed.xml              RSS 2.0
+```
+
+Code blocks are highlighted server-side with Chroma; `/static/code.css` maps Chroma's classes to
+the theme tokens, so highlighting follows the light/dark mode with no JavaScript. The
+`posts_enabled` setting (editable at `PUT /api/v1/admin/settings/posts`) is a kill switch: when it
+is `false`, every public post surface returns `404`, the nav link is hidden and the sitemap omits
+posts, but the posts stay in SQLite and return when it is re-enabled. `sitemap_enabled=false` makes
+`/sitemap.xml` return `404`.
 
 ## Build and run
 
@@ -95,11 +122,14 @@ internal/config/          JSON config (port, db path, base URL)
 internal/db/              SQLite (modernc, CGO-free), migrations and repositories
 internal/db/migrations/   append-only schema, seed and theme migrations
 internal/db/backup.go     whole-content export/import snapshot
-internal/markdown/        goldmark wrapper (GFM, sanitised)
+internal/markdown/        goldmark + GFM + Chroma class-based highlighting
 internal/theme/           token vocabulary, defaults, validation, CSS emission
 internal/icons/           vendored SVGs exposed to templates as inline SVG
 internal/web/             chi router, handlers, auth, CSRF, content snapshot
 internal/web/api_*.go     /api/v1 public reads and authenticated admin REST handlers
+internal/web/posts.go     public post index, single post, tag archive
+internal/web/feed.go      RSS 2.0 feed
+internal/web/admin_posts.go  admin post CRUD and publish controls
 internal/web/templates/   embedded html/template (public + admin)
 internal/web/static/      embedded style.css, admin.css, fonts, htmx, favicons, avatar
 ```

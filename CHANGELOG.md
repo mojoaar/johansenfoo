@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Posts: markdown body rendered server-side with Chroma class-based syntax highlighting, tags,
+  drafts, hero images, pagination, tag archives, and an RSS 2.0 feed at `/feed.xml`.
+- Public post pages `/posts`, `/posts/{slug}` and `/tags/{slug}`, and a `posts_enabled` kill switch
+  that 404s them without deleting data.
+- Admin post CRUD at `/admin/posts` with publish/unpublish controls.
+- Posts REST API at `/api/v1/posts*` and `/api/v1/admin/posts*`; posts and tags are included in
+  whole-content export/import.
 - Public read API at `/api/v1` for the profile, projects, experience, skills and theme.
 - Authenticated admin REST API at `/api/v1/admin` with CRUD for the profile, social links,
   projects, experience and skills, plus posts/theme settings.
