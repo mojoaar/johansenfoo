@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- SEO: metadata resolved with per-page (`page_seo`) and per-post overrides over admin-editable
+  global defaults; title template, Twitter site, three-source `noindex`, and `BlogPosting`
+  structured data on every published post.
+- Admin SEO page at `/admin/seo` and `GET|PUT /api/v1/admin/settings/seo`; `page_seo` is included
+  in whole-content export/import.
 - Posts: markdown body rendered server-side with Chroma class-based syntax highlighting, tags,
   drafts, hero images, pagination, tag archives, and an RSS 2.0 feed at `/feed.xml`.
 - Public post pages `/posts`, `/posts/{slug}` and `/tags/{slug}`, and a `posts_enabled` kill switch

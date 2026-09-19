@@ -17,7 +17,7 @@ CGO_ENABLED=0 go run ./cmd/johansenfoo -data=/tmp/jf   # run against a scratch d
 - Module `github.com/mojoaar/johansenfoo`, Go 1.25.5, must build and test with `CGO_ENABLED=0`.
 - No third-party origin on the runtime critical path other than the Umami snippet. HTMX is vendored
   at `/static/htmx.min.js`; no CDN scripts or fonts.
-- Migrations are append-only: `0001`-`0006` stay byte-identical. Add the next free number (`0007`)
+- Migrations are append-only: `0001`-`0007` stay byte-identical. Add the next free number (`0008`)
   only when required.
 - All timestamps are RFC 3339 UTC via `strftime('%Y-%m-%dT%H:%M:%SZ','now')`, never `datetime('now')`.
 - All SQL is parameterized.
@@ -37,7 +37,8 @@ internal/db/repo_settings.go key/value settings repository
 internal/db/repo_theme.go   theme repository
 internal/db/repo_session.go session repository: Create, Get, Delete, DeleteExpired
 internal/db/repo_post.go    post, tag and post_tag repository
-internal/db/backup.go       whole-content export/import snapshot (includes posts/tags)
+internal/db/repo_page_seo.go  page_seo per-route overrides
+internal/db/backup.go       whole-content export/import snapshot (includes posts/tags/pages)
 internal/markdown/          goldmark + GFM + Chroma class-based highlighting
 internal/theme/             token vocabulary, defaults, validation, CSS emission
 internal/icons/             vendored SVGs, exposed to templates as inline SVG
@@ -64,6 +65,8 @@ internal/web/feed.go        RSS 2.0 feed
 internal/web/admin_posts.go admin post CRUD and publish controls
 internal/web/api_posts.go   public posts REST handlers
 internal/web/api_admin_posts.go admin posts REST handlers
+internal/web/admin_seo.go   admin SEO settings and page overrides
+internal/web/api_admin_seo.go  SEO settings REST handlers
 internal/web/admin.go       admin shell and dashboard
 internal/web/admin_profile.go   profile and social-link handlers
 internal/web/admin_projects.go  project CRUD handlers
@@ -107,6 +110,9 @@ variants are reachable via the `_method` override):
                                POST|DELETE /admin/posts/{id}/delete
                                POST|PUT /admin/posts/{id}/publish
                                POST|PUT /admin/posts/{id}/unpublish
+  GET  /admin/seo              POST|PUT /admin/seo
+                               POST /admin/seo/pages
+                               POST|DELETE /admin/seo/pages/{id}/delete
 Auth routes: GET|POST /setup, GET|POST /login, POST /logout
 ```
 
@@ -123,6 +129,7 @@ API routes:
     GET|POST     /api/v1/admin/posts             GET|PUT|DELETE /api/v1/admin/posts/{id}
     POST         /api/v1/admin/posts/{id}/publish   /unpublish
     PUT          /api/v1/admin/settings/posts    PUT /api/v1/admin/settings/theme
+    GET|PUT      /api/v1/admin/settings/seo
     GET          /api/v1/admin/export            POST /api/v1/admin/import
 ```
 
@@ -139,6 +146,9 @@ API routes:
 - `posts_enabled=false` 404s every public post surface and hides the nav link, but never deletes
   data. `sitemap_enabled=false` 404s `/sitemap.xml`.
 - Every successful admin API write calls `d.Content.Reload()`, exactly like the HTML admin handlers.
+- Metadata precedence is per-page/post override → global SEO default → hardcoded fallback; the
+  noindex flag is the OR of site, `page_seo` and post. All SEO fields live in `settings` or
+  `page_seo` and are read from the cached snapshot, never queried per request.
 - `/api/` paths are CSRF-exempt; API write safety rests on Bearer/JSON rather than a form token.
 - Documentation is part of the definition of done: a new feature updates the README feature list, a
   new package updates the architecture trees here and in the README, and changed routes update both.

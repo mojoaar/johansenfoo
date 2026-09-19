@@ -67,6 +67,7 @@ Admin (Bearer or session)
   POST         /api/v1/admin/posts/{id}/unpublish
   PUT          /api/v1/admin/settings/posts    {"enabled": bool}
   PUT          /api/v1/admin/settings/theme    {"slug": string}
+  GET|PUT      /api/v1/admin/settings/seo
   GET          /api/v1/admin/export
   POST         /api/v1/admin/import
 ```
@@ -106,6 +107,20 @@ is `false`, every public post surface returns `404`, the nav link is hidden and 
 posts, but the posts stay in SQLite and return when it is re-enabled. `sitemap_enabled=false` makes
 `/sitemap.xml` return `404`.
 
+## SEO
+
+Metadata is resolved with a clear precedence: a per-page `page_seo` row or a per-post override
+beats the global SEO defaults, which beat the hardcoded fallback. All of it is editable at
+`/admin/seo` or through `GET|PUT /api/v1/admin/settings/seo`.
+
+- **Global defaults** — site title, title template (`%s | johansen.foo`), default meta description,
+  default OG image, OG type, Twitter card and site, canonical base URL, `robots.txt`, a site-wide
+  `noindex` toggle, and a sitemap toggle.
+- **Per-page overrides** live in `page_seo`, keyed by route (`/`, `/posts`, `/tags/{slug}`).
+- **Per-post overrides** — a post's `seo_title`, `seo_description`, `og_image_url`, `canonical_url`
+  and `noindex`; its description defaults to the summary and its OG image to the hero image.
+- Every published post also emits `BlogPosting` structured data; the home page emits `Person`.
+
 ## Build and run
 
 Requires Go 1.25 and is CGO-free.
@@ -130,6 +145,7 @@ internal/db/              SQLite (modernc, CGO-free), migrations and repositorie
 internal/db/migrations/   append-only schema, seed and theme migrations
 internal/db/backup.go     whole-content export/import snapshot
 internal/db/repo_post.go  post, tag and post_tag repository
+internal/db/repo_page_seo.go  page_seo per-route overrides
 internal/markdown/        goldmark + GFM + Chroma highlighting, sanitised
 internal/theme/           token vocabulary, defaults, validation, CSS emission
 internal/icons/           vendored SVGs exposed to templates as inline SVG
@@ -138,6 +154,8 @@ internal/web/api_*.go     /api/v1 public reads and authenticated admin REST hand
 internal/web/posts.go     public post index, single post, tag archive
 internal/web/feed.go      RSS 2.0 feed
 internal/web/admin_posts.go  admin post CRUD and publish controls
+internal/web/admin_seo.go    admin SEO settings and page overrides
+internal/web/api_admin_seo.go  SEO settings REST handlers
 internal/web/templates/   embedded html/template (public + admin)
 internal/web/static/      embedded style.css, admin.css, fonts, htmx, favicons, avatar
 ```
