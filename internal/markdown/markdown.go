@@ -4,12 +4,20 @@ import (
 	"bytes"
 	"html/template"
 
+	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/yuin/goldmark"
+	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/extension"
 )
 
 var md = goldmark.New(
-	goldmark.WithExtensions(extension.GFM),
+	goldmark.WithExtensions(
+		extension.GFM,
+		highlighting.NewHighlighting(
+			highlighting.WithStyle("monokai"),
+			highlighting.WithFormatOptions(chromahtml.WithClasses(true)),
+		),
+	),
 )
 
 func Render(src string) template.HTML {

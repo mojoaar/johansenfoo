@@ -1,0 +1,85 @@
+.chroma {
+    color: var(--text);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+    line-height: 1.5;
+}
+
+.chroma pre {
+    margin: 0;
+    white-space: pre;
+}
+
+.chroma .k,
+.chroma .kc,
+.chroma .kd,
+.chroma .kn,
+.chroma .kp,
+.chroma .kr,
+.chroma .kt {
+    color: var(--accent);
+}
+
+.chroma .s,
+.chroma .sa,
+.chroma .sb,
+.chroma .sc,
+.chroma .dl,
+.chroma .sd,
+.chroma .s1,
+.chroma .s2,
+.chroma .se,
+.chroma .sh,
+.chroma .si,
+.chroma .sx,
+.chroma .sr,
+.chroma .ss {
+    color: var(--green);
+}
+
+.chroma .c,
+.chroma .ch,
+.chroma .cm,
+.chroma .c1,
+.chroma .cs,
+.chroma .cp,
+.chroma .cpf {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.chroma .nf,
+.chroma .fm,
+.chroma .nc,
+.chroma .nd {
+    color: var(--accent2);
+}
+
+.chroma .mi,
+.chroma .mf,
+.chroma .mh,
+.chroma .mo,
+.chroma .m,
+.chroma .mb,
+.chroma .il {
+    color: var(--accent2);
+}
+
+.chroma .nb,
+.chroma .bp,
+.chroma .nt {
+    color: var(--accent);
+}
+
+.chroma .na {
+    color: var(--accent2);
+}
+
+.chroma .o,
+.chroma .ow,
+.chroma .p {
+    color: var(--text);
+}
