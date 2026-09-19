@@ -34,18 +34,28 @@ func nullableText(s string) any {
 	return s
 }
 
+func clamp(s string, max int) string {
+	if len(s) > max {
+		return s[:max]
+	}
+	return s
+}
+
 func (r *PageViewRepo) Record(v *PageView) error {
+	path := clamp(v.Path, 512)
+	referrer := clamp(v.Referrer, 1024)
+	userAgent := clamp(v.UserAgent, 1024)
 	if v.CreatedAt.IsZero() {
 		_, err := r.db.Exec(
 			`INSERT INTO page_view (path, referrer, user_agent, ip_hash, created_at)
 			 VALUES (?, ?, ?, ?, `+nowExpr+`)`,
-			v.Path, nullableText(v.Referrer), nullableText(v.UserAgent), nullableText(v.IPHash),
+			path, nullableText(referrer), nullableText(userAgent), nullableText(v.IPHash),
 		)
 		return err
 	}
 	_, err := r.db.Exec(
 		`INSERT INTO page_view (path, referrer, user_agent, ip_hash, created_at) VALUES (?, ?, ?, ?, ?)`,
-		v.Path, nullableText(v.Referrer), nullableText(v.UserAgent), nullableText(v.IPHash),
+		path, nullableText(referrer), nullableText(userAgent), nullableText(v.IPHash),
 		v.CreatedAt.UTC().Format(time.RFC3339),
 	)
 	return err

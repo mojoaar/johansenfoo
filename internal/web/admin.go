@@ -17,6 +17,7 @@ func adminDashboardHandler(d Deps) http.HandlerFunc {
 		data.Skills = c.Skills
 		data.ThemeSlug = c.Theme.Slug
 		data.StatsEnabled = c.Settings["stats_enabled"] != "false"
+		data.Settings = c.Settings
 		data.ViewsToday = countSinceDays(d, 1)
 		data.Views7d = countSinceDays(d, 7)
 		data.Views30d = countSinceDays(d, 30)

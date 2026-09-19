@@ -101,3 +101,22 @@ func TestPageViewPruneAndClear(t *testing.T) {
 		t.Errorf("after Clear = %d, want 0", n)
 	}
 }
+
+func TestPageViewClampsHeaderLengths(t *testing.T) {
+	d := seeded(t)
+	r := NewPageViewRepo(d)
+	long := make([]byte, 5000)
+	for i := range long {
+		long[i] = 'a'
+	}
+	if err := r.Record(&PageView{Path: "/", Referrer: string(long), UserAgent: string(long), IPHash: "x"}); err != nil {
+		t.Fatalf("Record: %v", err)
+	}
+	recent, err := r.Recent(1)
+	if err != nil || len(recent) != 1 {
+		t.Fatalf("Recent: %v", err)
+	}
+	if len(recent[0].Referrer) > 1024 || len(recent[0].UserAgent) > 1024 {
+		t.Errorf("unclamped lengths: referrer=%d ua=%d", len(recent[0].Referrer), len(recent[0].UserAgent))
+	}
+}

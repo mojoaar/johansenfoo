@@ -94,6 +94,16 @@ func (w *viewResponseWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
+func (w *viewResponseWriter) Flush() {
+	if f, ok := w.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
+func (w *viewResponseWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
+}
+
 func newPageViewMiddleware(d Deps) func(http.Handler) http.Handler {
 	rec := newViewRecorder(d.DB)
 	return func(next http.Handler) http.Handler {
@@ -139,6 +149,7 @@ func pruneViews(d *sql.DB) (int64, error) {
 }
 
 func startStatsPruner(d *sql.DB, interval time.Duration) (stop func()) {
+	_, _ = pruneViews(d)
 	ticker := time.NewTicker(interval)
 	go func() {
 		for range ticker.C {

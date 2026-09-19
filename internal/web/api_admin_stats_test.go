@@ -2,6 +2,7 @@ package web
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -95,5 +96,50 @@ func TestAdminDashboardShowsDisabledState(t *testing.T) {
 	rec := adminRequest(t, d, store, http.MethodGet, "/admin", nil)
 	if !strings.Contains(rec.Body.String(), "disabled") {
 		t.Error("dashboard does not show the disabled state")
+	}
+}
+
+func TestAdminDashboardShowsRecentHits(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	seedViews(t, db.NewPageViewRepo(d), 1)
+	rec := adminRequest(t, d, store, http.MethodGet, "/admin", nil)
+	if !strings.Contains(rec.Body.String(), "Recent hits") {
+		t.Error("dashboard is missing the recent hits card")
+	}
+}
+
+func TestAdminStatsSettingsToggle(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	rec := adminRequest(t, d, store, http.MethodPost, "/admin/stats", url.Values{
+		"stats_retention_days": {"30"},
+	})
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d, want 303; body=%s", rec.Code, rec.Body.String())
+	}
+	settings := db.NewSettingsRepo(d)
+	if v, _ := settings.Get("stats_enabled"); v != "false" {
+		t.Errorf("stats_enabled = %q, want false (unchecked box)", v)
+	}
+	if v, _ := settings.Get("stats_retention_days"); v != "30" {
+		t.Errorf("retention = %q, want 30", v)
+	}
+}
+
+func TestAPIAdminStatsSettingsPut(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := loggedInHandler(t, d, store)
+	rec := apiDo(t, h, http.MethodPut, "/api/v1/admin/settings/stats", `{"enabled":false,"retention_days":14}`, withSession)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body=%s", rec.Code, rec.Body.String())
+	}
+	settings := db.NewSettingsRepo(d)
+	if v, _ := settings.Get("stats_enabled"); v != "false" {
+		t.Errorf("stats_enabled = %q", v)
+	}
+	if v, _ := settings.Get("stats_retention_days"); v != "14" {
+		t.Errorf("retention = %q", v)
 	}
 }

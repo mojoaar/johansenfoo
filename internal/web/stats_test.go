@@ -2,6 +2,7 @@ package web
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -137,5 +138,75 @@ func TestPruneViewsUsesRetentionSetting(t *testing.T) {
 	}
 	if remaining := viewCount(t, repo); remaining != 1 {
 		t.Errorf("remaining = %d, want 1", remaining)
+	}
+}
+
+func TestViewResponseWriterForwardsFlusher(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	mw := newPageViewMiddleware(Deps{DB: d, Content: store})
+
+	flushed := false
+	h := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		f, ok := w.(http.Flusher)
+		if !ok {
+			t.Error("middleware hid http.Flusher (breaks MCP SSE)")
+			return
+		}
+		f.Flush()
+		flushed = true
+	}))
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/", nil))
+	if !flushed {
+		t.Error("handler did not run")
+	}
+}
+
+func TestPageViewExcludesAllNonPublicPaths(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newTestHandlerWith(t, d, store)
+	repo := db.NewPageViewRepo(d)
+	for _, path := range []string{
+		"/static/style.css", "/robots.txt", "/sitemap.xml", "/feed.xml",
+		"/metrics", "/api/v1/profile", "/mcp",
+	} {
+		apiDo(t, h, http.MethodGet, path, "", nil)
+	}
+	if n := viewCount(t, repo); n != 0 {
+		t.Errorf("views = %d, want 0 for non-public paths", n)
+	}
+}
+
+func TestDailyUniqueSumIsPerDay(t *testing.T) {
+	d := newTestDB(t)
+	repo := db.NewPageViewRepo(d)
+	now := time.Now().UTC()
+	for i := 0; i < 3; i++ {
+		if err := repo.Record(&db.PageView{Path: "/", IPHash: "same", CreatedAt: now.AddDate(0, 0, -i)}); err != nil {
+			t.Fatalf("Record: %v", err)
+		}
+	}
+	if got := dailyUniqueSum(d, 3); got != 3 {
+		t.Errorf("dailyUniqueSum = %d, want 3 (sum of per-day uniques)", got)
+	}
+	if got := dailyUniqueSum(d, 1); got != 1 {
+		t.Errorf("dailyUniqueSum(1) = %d, want 1", got)
+	}
+}
+
+func TestStatsPrunerRunsAtStartup(t *testing.T) {
+	d := newTestDB(t)
+	repo := db.NewPageViewRepo(d)
+	if err := repo.Record(&db.PageView{Path: "/old", IPHash: "x", CreatedAt: time.Now().UTC().AddDate(0, 0, -100)}); err != nil {
+		t.Fatalf("Record: %v", err)
+	}
+	if err := db.NewSettingsRepo(d).Set("stats_retention_days", "5"); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	stop := startStatsPruner(d, time.Hour)
+	stop()
+	if n := viewCount(t, repo); n != 0 {
+		t.Errorf("views = %d, want 0 after the startup prune", n)
 	}
 }
