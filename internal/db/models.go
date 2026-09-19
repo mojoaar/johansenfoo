@@ -1,54 +1,54 @@
 package db
 
 type Profile struct {
-	Name       string
-	Handle     string
-	Location   string
-	DOB        string
-	Tagline    string
-	HeroBio    string
-	Bio        string
-	AboutPara1 string
-	AboutPara2 string
-	Avatar     string
+	Name       string `json:"name"`
+	Handle     string `json:"handle"`
+	Location   string `json:"location"`
+	DOB        string `json:"dob"`
+	Tagline    string `json:"tagline"`
+	HeroBio    string `json:"hero_bio"`
+	Bio        string `json:"bio"`
+	AboutPara1 string `json:"about_para_1"`
+	AboutPara2 string `json:"about_para_2"`
+	Avatar     string `json:"avatar"`
 }
 
 type SocialLink struct {
-	ID       int64
-	Platform string
-	URL      string
-	Label    string
-	Sort     int
-	Visible  bool
+	ID       int64  `json:"id"`
+	Platform string `json:"platform"`
+	URL      string `json:"url"`
+	Label    string `json:"label"`
+	Sort     int    `json:"sort"`
+	Visible  bool   `json:"visible"`
 }
 
 type Project struct {
-	ID          int64
-	Name        string
-	URL         string
-	Description string
-	Icon        string
-	IsLink      bool
-	URLLabel    string
-	Sort        int
-	Visible     bool
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	URL         string `json:"url"`
+	Description string `json:"description"`
+	Icon        string `json:"icon"`
+	IsLink      bool   `json:"is_link"`
+	URLLabel    string `json:"url_label"`
+	Sort        int    `json:"sort"`
+	Visible     bool   `json:"visible"`
 }
 
 type Experience struct {
-	ID      int64
-	Years   string
-	Role    string
-	Company string
-	Icon    string
-	Sort    int
-	Visible bool
+	ID      int64  `json:"id"`
+	Years   string `json:"years"`
+	Role    string `json:"role"`
+	Company string `json:"company"`
+	Icon    string `json:"icon"`
+	Sort    int    `json:"sort"`
+	Visible bool   `json:"visible"`
 }
 
 type Skill struct {
-	ID      int64
-	Name    string
-	Sort    int
-	Visible bool
+	ID      int64  `json:"id"`
+	Name    string `json:"name"`
+	Sort    int    `json:"sort"`
+	Visible bool   `json:"visible"`
 }
 
 type Theme struct {
