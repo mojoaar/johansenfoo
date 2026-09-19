@@ -213,3 +213,63 @@ func TestPostDuplicateSlugIsToolError(t *testing.T) {
 		t.Fatal("expected a tool error for a duplicate slug")
 	}
 }
+
+func TestSeoTools(t *testing.T) {
+	b, _ := testBackend(t)
+	if err := db.NewPageSeoRepo(b.DB).Upsert(&db.PageSeo{Route: "/posts", Title: "Keep"}); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+
+	out := decode[map[string]any](t, callTool(t, b.getSeoSettings, nil))
+	if out["site_title"] != "Morten Johansen | johansen.foo" {
+		t.Errorf("site_title = %v", out["site_title"])
+	}
+
+	callTool(t, b.updateSeoSettings, map[string]any{"twitter_site": "@mcp"})
+	settings := db.NewSettingsRepo(b.DB)
+	if v, _ := settings.Get("twitter_site"); v != "@mcp" {
+		t.Errorf("twitter_site = %q", v)
+	}
+	page, err := db.NewPageSeoRepo(b.DB).Get("/posts")
+	if err != nil || page.Title != "Keep" {
+		t.Errorf("page_seo not preserved: %+v, err=%v", page, err)
+	}
+}
+
+func TestPostsToggleTools(t *testing.T) {
+	b, reloads := testBackend(t)
+	callTool(t, b.disablePosts, nil)
+	if v, _ := db.NewSettingsRepo(b.DB).Get("posts_enabled"); v != "false" {
+		t.Errorf("posts_enabled = %q, want false", v)
+	}
+	callTool(t, b.enablePosts, nil)
+	if v, _ := db.NewSettingsRepo(b.DB).Get("posts_enabled"); v != "true" {
+		t.Errorf("posts_enabled = %q, want true", v)
+	}
+	if *reloads != 2 {
+		t.Errorf("reloads = %d, want 2", *reloads)
+	}
+}
+
+func TestExportImportTools(t *testing.T) {
+	b, _ := testBackend(t)
+	snap := decode[db.Snapshot](t, callTool(t, b.exportContent, nil))
+	if snap.Version != db.SnapshotVersion || snap.Profile.Name == "" {
+		t.Fatalf("snapshot = %+v", snap)
+	}
+
+	snap.Profile.Name = "MCP Imported"
+	callTool(t, b.importContent, map[string]any{"snapshot": snap})
+	got := decode[db.Profile](t, callTool(t, b.getProfile, nil))
+	if got.Name != "MCP Imported" {
+		t.Errorf("profile name = %q, want MCP Imported", got.Name)
+	}
+}
+
+func TestImportContentRejectsMalformed(t *testing.T) {
+	b, _ := testBackend(t)
+	res := callTool(t, b.importContent, map[string]any{"snapshot": map[string]any{"version": 999}})
+	if !res.IsError {
+		t.Fatal("expected a tool error for an unsupported snapshot")
+	}
+}
