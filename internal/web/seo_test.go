@@ -295,3 +295,56 @@ func TestMetaPrefersSettingsOverFallback(t *testing.T) {
 		t.Error("robots meta is wrong")
 	}
 }
+
+func TestSitemapOmitsNoindexedUrls(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newTestHandlerWith(t, d, store)
+	repo := db.NewPostRepo(d)
+	createSeoPost(t, repo, &db.Post{Slug: "hidden-post", Title: "Hidden", Status: "published", NoIndex: true})
+	createSeoPost(t, repo, &db.Post{Slug: "shown-post", Title: "Shown", Status: "published"})
+
+	rec := apiDo(t, h, http.MethodGet, "/sitemap.xml", "", nil)
+	body := rec.Body.String()
+	if strings.Contains(body, "hidden-post") {
+		t.Error("noindexed post advertised in sitemap")
+	}
+	if !strings.Contains(body, "shown-post") {
+		t.Error("indexable post missing from sitemap")
+	}
+}
+
+func TestSitemapUsesPageCanonical(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newTestHandlerWith(t, d, store)
+	if err := db.NewPageSeoRepo(d).Upsert(&db.PageSeo{Route: "/posts", CanonicalURL: "https://example.com/writing"}); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+	if err := store.Reload(); err != nil {
+		t.Fatalf("Reload: %v", err)
+	}
+	rec := apiDo(t, h, http.MethodGet, "/sitemap.xml", "", nil)
+	body := rec.Body.String()
+	if !strings.Contains(body, "<loc>https://example.com/writing</loc>") {
+		t.Error("page_seo canonical not used in sitemap")
+	}
+	if strings.Contains(body, "<loc>https://johansen.foo/posts</loc>") {
+		t.Error("default posts URL still present despite canonical override")
+	}
+}
+
+func TestSitemap404WhenSiteNoindex(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newTestHandlerWith(t, d, store)
+	if err := db.NewSettingsRepo(d).Set("noindex", "true"); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	if err := store.Reload(); err != nil {
+		t.Fatalf("Reload: %v", err)
+	}
+	if rec := apiDo(t, h, http.MethodGet, "/sitemap.xml", "", nil); rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want 404", rec.Code)
+	}
+}

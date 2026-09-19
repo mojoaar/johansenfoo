@@ -78,3 +78,23 @@ func TestAdminAPISeoRejectsEmptyRoute(t *testing.T) {
 		t.Fatalf("status = %d, want 400", rec.Code)
 	}
 }
+
+func TestAdminAPISeoPutMissingPagesRejects(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := loggedInHandler(t, d, store)
+	if err := db.NewPageSeoRepo(d).Upsert(&db.PageSeo{Route: "/posts", Title: "Keep"}); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+	if err := store.Reload(); err != nil {
+		t.Fatalf("Reload: %v", err)
+	}
+
+	rec := apiDo(t, h, http.MethodPut, "/api/v1/admin/settings/seo", `{"site_title":"X"}`, withSession)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", rec.Code)
+	}
+	if got := store.Current().PageSeo["/posts"].Title; got != "Keep" {
+		t.Errorf("override title = %q, want Keep (overrides were destroyed)", got)
+	}
+}

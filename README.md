@@ -83,9 +83,11 @@ or it is rejected without changing anything.
 Post payloads accept `tags` as an array of strings (`["go","testing"]`) or of `{name, slug}`
 objects. Creating or renaming a post to a slug that is already in use returns `409`; an empty slug
 is rejected. `PUT` that omits `status` keeps the post's current status. Snapshots are versioned:
-a snapshot exported before the posts system (version 1) is rejected, so re-export after upgrading.
+a snapshot exported by an older version is rejected, so re-export after upgrading.
 Public post timestamps are emitted in the site timezone with an offset
-(`2026-09-16T14:30:00+02:00`).
+(`2026-09-16T14:30:00+02:00`). `PUT /api/v1/admin/settings/seo` is a full replace and requires the
+`pages` array (the `GET` response always includes it); a snapshot exported by an older version is
+rejected, so re-export after upgrading.
 
 ## Posts
 

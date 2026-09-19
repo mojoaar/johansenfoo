@@ -152,3 +152,16 @@ func TestPostPageEmitsBlogPosting(t *testing.T) {
 		t.Error("Person schema lost from the landing page")
 	}
 }
+
+func TestPostNoindexMeta(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newTestHandlerWith(t, d, store)
+	createSeoPost(t, db.NewPostRepo(d), &db.Post{
+		Slug: "secret", Title: "Secret", Status: "published", NoIndex: true,
+	})
+	rec := apiDo(t, h, http.MethodGet, "/posts/secret", "", nil)
+	if !strings.Contains(rec.Body.String(), `name="robots" content="noindex, nofollow"`) {
+		t.Error("per-post noindex not applied")
+	}
+}

@@ -7,18 +7,18 @@ import (
 )
 
 type seoRequest struct {
-	SiteTitle        string       `json:"site_title"`
-	TitleTemplate    string       `json:"title_template"`
-	SEODescription   string       `json:"seo_description"`
-	OGImageURL       string       `json:"og_image_url"`
-	OGType           string       `json:"og_type"`
-	TwitterCard      string       `json:"twitter_card"`
-	TwitterSite      string       `json:"twitter_site"`
-	CanonicalBaseURL string       `json:"canonical_base_url"`
-	NoIndex          bool         `json:"noindex"`
-	SitemapEnabled   bool         `json:"sitemap_enabled"`
-	RobotsTxt        string       `json:"robots_txt"`
-	Pages            []db.PageSeo `json:"pages"`
+	SiteTitle        string        `json:"site_title"`
+	TitleTemplate    string        `json:"title_template"`
+	SEODescription   string        `json:"seo_description"`
+	OGImageURL       string        `json:"og_image_url"`
+	OGType           string        `json:"og_type"`
+	TwitterCard      string        `json:"twitter_card"`
+	TwitterSite      string        `json:"twitter_site"`
+	CanonicalBaseURL string        `json:"canonical_base_url"`
+	NoIndex          bool          `json:"noindex"`
+	SitemapEnabled   bool          `json:"sitemap_enabled"`
+	RobotsTxt        string        `json:"robots_txt"`
+	Pages            *[]db.PageSeo `json:"pages"`
 }
 
 func currentSEO(d Deps) (seoRequest, error) {
@@ -43,7 +43,7 @@ func currentSEO(d Deps) (seoRequest, error) {
 		NoIndex:          s["noindex"] == "true",
 		SitemapEnabled:   s["sitemap_enabled"] != "false",
 		RobotsTxt:        s["robots_txt"],
-		Pages:            pages,
+		Pages:            &pages,
 	}, nil
 }
 
@@ -64,8 +64,12 @@ func apiAdminSeoPutHandler(d Deps) http.HandlerFunc {
 		if !decodeJSON(w, r, &req) {
 			return
 		}
+		if req.Pages == nil {
+			writeAPIError(w, http.StatusBadRequest, "pages is required")
+			return
+		}
 
-		if err := db.NewPageSeoRepo(d.DB).ReplaceAll(req.Pages); err != nil {
+		if err := db.NewPageSeoRepo(d.DB).ReplaceAll(*req.Pages); err != nil {
 			writeAPIError(w, http.StatusBadRequest, "invalid pages")
 			return
 		}

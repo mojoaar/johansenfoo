@@ -213,7 +213,7 @@ func sitemapHandler(d Deps) http.HandlerFunc {
 			http.Error(w, "content unavailable", http.StatusInternalServerError)
 			return
 		}
-		if c.Settings["sitemap_enabled"] == "false" {
+		if c.Settings["sitemap_enabled"] == "false" || c.Settings["noindex"] == "true" {
 			http.NotFound(w, r)
 			return
 		}
@@ -222,13 +222,25 @@ func sitemapHandler(d Deps) http.HandlerFunc {
 			base = "https://johansen.foo"
 		}
 
+		pageNoIndex := func(route string) bool {
+			return c.PageSeo[route].NoIndex
+		}
+		canonicalFor := func(route, fallback string) string {
+			if p, ok := c.PageSeo[route]; ok && p.CanonicalURL != "" {
+				return p.CanonicalURL
+			}
+			return fallback
+		}
+
 		var buf bytes.Buffer
 		buf.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
 		buf.WriteString(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n")
 		writeLoc := func(loc string) {
 			buf.WriteString("  <url>\n    <loc>" + xmlEscape(loc) + "</loc>\n  </url>\n")
 		}
-		writeLoc(base + "/")
+		if !pageNoIndex("/") {
+			writeLoc(canonicalFor("/", base+"/"))
+		}
 		if postsEnabled(c) {
 			repo := db.NewPostRepo(d.DB)
 			posts, err := repo.Published(1000, 0)
@@ -241,12 +253,21 @@ func sitemapHandler(d Deps) http.HandlerFunc {
 				http.Error(w, "storage error", http.StatusInternalServerError)
 				return
 			}
-			writeLoc(base + "/posts")
+			if !pageNoIndex("/posts") {
+				writeLoc(canonicalFor("/posts", base+"/posts"))
+			}
 			for _, p := range posts {
-				writeLoc(base + "/posts/" + p.Slug)
+				if p.NoIndex {
+					continue
+				}
+				writeLoc(firstNonEmpty(p.CanonicalURL, base+"/posts/"+p.Slug))
 			}
 			for _, t := range tags {
-				writeLoc(base + "/tags/" + t.Slug)
+				route := "/tags/" + t.Slug
+				if pageNoIndex(route) {
+					continue
+				}
+				writeLoc(canonicalFor(route, base+"/tags/"+t.Slug))
 			}
 		}
 		buf.WriteString("</urlset>\n")
