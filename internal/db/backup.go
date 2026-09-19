@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const SnapshotVersion = 1
+const SnapshotVersion = 2
 
 var secretSettingKeys = map[string]bool{
 	"admin_password_hash": true,

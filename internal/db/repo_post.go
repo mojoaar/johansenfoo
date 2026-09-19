@@ -16,6 +16,10 @@ type PostRepo struct{ db *sql.DB }
 
 func NewPostRepo(d *sql.DB) *PostRepo { return &PostRepo{db: d} }
 
+func IsUniqueViolation(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "UNIQUE constraint failed")
+}
+
 const postColumns = `id, slug, title, summary, body_md, status, published_at, created_at, updated_at,
 	hero_image_url, hero_image_alt, seo_title, seo_description, og_image_url, canonical_url, noindex`
 

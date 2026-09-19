@@ -1,10 +1,47 @@
 package web
 
 import (
+	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/mojoaar/johansenfoo/internal/db"
 )
+
+type apiTags []db.Tag
+
+func (t *apiTags) UnmarshalJSON(data []byte) error {
+	var names []string
+	if err := json.Unmarshal(data, &names); err == nil {
+		out := make(apiTags, 0, len(names))
+		for _, name := range names {
+			name = strings.TrimSpace(name)
+			if name == "" {
+				continue
+			}
+			out = append(out, db.Tag{Name: name, Slug: db.Slugify(name)})
+		}
+		*t = out
+		return nil
+	}
+	var objs []db.Tag
+	if err := json.Unmarshal(data, &objs); err != nil {
+		return err
+	}
+	*t = objs
+	return nil
+}
+
+type apiPostRequest struct {
+	db.Post
+	Tags apiTags `json:"tags"`
+}
+
+func (req *apiPostRequest) post() db.Post {
+	p := req.Post
+	p.Tags = []db.Tag(req.Tags)
+	return p
+}
 
 func validateAPIPost(p *db.Post) bool {
 	if p.Status != "" && p.Status != "draft" && p.Status != "published" {
@@ -44,10 +81,11 @@ func apiAdminPostsGetHandler(d Deps) http.HandlerFunc {
 
 func apiAdminPostsCreateHandler(d Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var p db.Post
-		if !decodeJSON(w, r, &p) {
+		var req apiPostRequest
+		if !decodeJSON(w, r, &req) {
 			return
 		}
+		p := req.post()
 		if !validateAPIPost(&p) {
 			writeAPIError(w, http.StatusBadRequest, "title is required and status must be draft or published")
 			return
@@ -56,6 +94,10 @@ func apiAdminPostsCreateHandler(d Deps) http.HandlerFunc {
 		repo := db.NewPostRepo(d.DB)
 		id, err := repo.Create(&p)
 		if err != nil {
+			if db.IsUniqueViolation(err) {
+				writeAPIError(w, http.StatusConflict, "slug already in use")
+				return
+			}
 			writeAPIError(w, http.StatusInternalServerError, "save failed")
 			return
 		}
@@ -84,20 +126,28 @@ func apiAdminPostsUpdateHandler(d Deps) http.HandlerFunc {
 			writeAPIError(w, http.StatusNotFound, "post not found")
 			return
 		}
-		var p db.Post
-		if !decodeJSON(w, r, &p) {
+		var req apiPostRequest
+		if !decodeJSON(w, r, &req) {
 			return
+		}
+		p := req.post()
+		p.ID = id
+		if p.Status == "" {
+			p.Status = existing.Status
 		}
 		if !validateAPIPost(&p) {
 			writeAPIError(w, http.StatusBadRequest, "title is required and status must be draft or published")
 			return
 		}
-		p.ID = id
 		if p.PublishedAt == nil {
 			p.PublishedAt = existing.PublishedAt
 		}
 		ensurePublishedAt(&p)
 		if err := repo.Update(&p); err != nil {
+			if db.IsUniqueViolation(err) {
+				writeAPIError(w, http.StatusConflict, "slug already in use")
+				return
+			}
 			writeAPIError(w, http.StatusInternalServerError, "save failed")
 			return
 		}

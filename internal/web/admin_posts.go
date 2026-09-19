@@ -101,8 +101,16 @@ func adminPostCreateHandler(d Deps) http.HandlerFunc {
 			return
 		}
 		p := formPost(r)
+		if p.Slug == "" {
+			http.Error(w, "slug is required", http.StatusBadRequest)
+			return
+		}
 		ensurePublishedAt(p)
 		if _, err := db.NewPostRepo(d.DB).Create(p); err != nil {
+			if db.IsUniqueViolation(err) {
+				http.Error(w, "slug already in use", http.StatusBadRequest)
+				return
+			}
 			http.Error(w, "save failed", http.StatusInternalServerError)
 			return
 		}
@@ -133,11 +141,19 @@ func adminPostUpdateHandler(d Deps) http.HandlerFunc {
 		}
 		p := formPost(r)
 		p.ID = id
+		if p.Slug == "" {
+			http.Error(w, "slug is required", http.StatusBadRequest)
+			return
+		}
 		if p.PublishedAt == nil {
 			p.PublishedAt = existing.PublishedAt
 		}
 		ensurePublishedAt(p)
 		if err := repo.Update(p); err != nil {
+			if db.IsUniqueViolation(err) {
+				http.Error(w, "slug already in use", http.StatusBadRequest)
+				return
+			}
 			http.Error(w, "save failed", http.StatusInternalServerError)
 			return
 		}

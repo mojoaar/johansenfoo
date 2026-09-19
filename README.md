@@ -79,6 +79,13 @@ hash and API key stripped; posting that snapshot back to `/api/v1/admin/import` 
 content in one transaction. An import must carry every content section and a valid `active_theme`,
 or it is rejected without changing anything.
 
+Post payloads accept `tags` as an array of strings (`["go","testing"]`) or of `{name, slug}`
+objects. Creating or renaming a post to a slug that is already in use returns `409`; an empty slug
+is rejected. `PUT` that omits `status` keeps the post's current status. Snapshots are versioned:
+a snapshot exported before the posts system (version 1) is rejected, so re-export after upgrading.
+Public post timestamps are emitted in the site timezone with an offset
+(`2026-09-16T14:30:00+02:00`).
+
 ## Posts
 
 Posts are authored at `/admin/posts`, where each post has a title, slug, summary, markdown body,
@@ -122,7 +129,8 @@ internal/config/          JSON config (port, db path, base URL)
 internal/db/              SQLite (modernc, CGO-free), migrations and repositories
 internal/db/migrations/   append-only schema, seed and theme migrations
 internal/db/backup.go     whole-content export/import snapshot
-internal/markdown/        goldmark + GFM + Chroma class-based highlighting
+internal/db/repo_post.go  post, tag and post_tag repository
+internal/markdown/        goldmark + GFM + Chroma highlighting, sanitised
 internal/theme/           token vocabulary, defaults, validation, CSS emission
 internal/icons/           vendored SVGs exposed to templates as inline SVG
 internal/web/             chi router, handlers, auth, CSRF, content snapshot

@@ -203,3 +203,15 @@ func TestBackupIncludesPosts(t *testing.T) {
 		t.Errorf("tags = %+v", got.Tags)
 	}
 }
+
+func TestImportRejectsOldVersion(t *testing.T) {
+	d := seeded(t)
+	snap, err := Export(d)
+	if err != nil {
+		t.Fatalf("Export: %v", err)
+	}
+	snap.Version = 1
+	if err := Import(d, snap); err == nil {
+		t.Fatal("Import accepted a snapshot with an old version")
+	}
+}

@@ -126,3 +126,31 @@ func TestAdminPostFormsRenderCSRF(t *testing.T) {
 		}
 	}
 }
+
+func TestAdminPostRejectsEmptySlug(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	rec := adminRequest(t, d, store, http.MethodPost, "/admin/posts", url.Values{
+		"title":  {"你好世界"},
+		"slug":   {""},
+		"status": {"draft"},
+	})
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", rec.Code)
+	}
+}
+
+func TestAdminPostRejectsDuplicateSlug(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	publishPost(t, db.NewPostRepo(d), "First", "dup-slug", "draft", "body", nil)
+
+	rec := adminRequest(t, d, store, http.MethodPost, "/admin/posts", url.Values{
+		"title":  {"Second"},
+		"slug":   {"dup-slug"},
+		"status": {"draft"},
+	})
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400; body=%s", rec.Code, rec.Body.String())
+	}
+}

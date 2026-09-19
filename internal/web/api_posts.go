@@ -3,6 +3,7 @@ package web
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -12,7 +13,8 @@ import (
 
 type apiPost struct {
 	db.Post
-	HTML string `json:"html"`
+	PublishedAt *string `json:"published_at"`
+	HTML        string  `json:"html"`
 }
 
 type apiPostsResponse struct {
@@ -22,8 +24,13 @@ type apiPostsResponse struct {
 	Total   int       `json:"total"`
 }
 
-func toAPIPost(p db.Post) apiPost {
-	return apiPost{Post: p, HTML: string(markdown.Render(p.BodyMD))}
+func toAPIPost(p db.Post, loc *time.Location) apiPost {
+	ap := apiPost{Post: p, HTML: string(markdown.Render(p.BodyMD))}
+	if p.PublishedAt != nil {
+		s := p.PublishedAt.In(loc).Format(time.RFC3339)
+		ap.PublishedAt = &s
+	}
+	return ap
 }
 
 func apiPostsHandler(d Deps) http.HandlerFunc {
@@ -63,8 +70,9 @@ func apiPostsHandler(d Deps) http.HandlerFunc {
 			return
 		}
 		out := make([]apiPost, 0, len(posts))
+		loc := siteLocation(c)
 		for _, p := range posts {
-			out = append(out, toAPIPost(p))
+			out = append(out, toAPIPost(p, loc))
 		}
 		writeJSON(w, http.StatusOK, apiPostsResponse{
 			Posts:   out,
@@ -95,6 +103,6 @@ func apiPostHandler(d Deps) http.HandlerFunc {
 			writeAPIError(w, http.StatusInternalServerError, "storage error")
 			return
 		}
-		writeJSON(w, http.StatusOK, toAPIPost(*p))
+		writeJSON(w, http.StatusOK, toAPIPost(*p, siteLocation(c)))
 	}
 }

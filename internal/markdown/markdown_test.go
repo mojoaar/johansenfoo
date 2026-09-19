@@ -41,3 +41,30 @@ func TestRenderGFM(t *testing.T) {
 		t.Errorf("GFM strikethrough not rendered: %s", out)
 	}
 }
+
+func TestRenderNeutralisesDangerousURLs(t *testing.T) {
+	payloads := []string{
+		"<javascript:alert(1)>",
+		"<vbscript:alert(1)>",
+		"[x](javascript:alert(1))",
+		"[x](&#106;avascript:alert(1))",
+		"[x](javascript&colon;alert(1))",
+		"[x](vbscript:alert(1))",
+		"[x][r]\n\n[r]: &#106;avascript:alert(1)",
+		"![x](javascript:alert(1))",
+	}
+	bad := []string{
+		`href="javascript:`,
+		`href="vbscript:`,
+		`href="data:text/html`,
+		`src="javascript:`,
+	}
+	for _, p := range payloads {
+		out := strings.ToLower(string(Render(p)))
+		for _, b := range bad {
+			if strings.Contains(out, b) {
+				t.Errorf("payload %q produced %s: %s", p, b, out)
+			}
+		}
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mojoaar/johansenfoo/internal/db"
 )
@@ -146,5 +147,71 @@ func TestAPIAdminPostsCRUD(t *testing.T) {
 	rec = apiDo(t, h, http.MethodDelete, "/api/v1/admin/posts/"+itoa(created.ID), "", withSession)
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("delete status = %d, want 204", rec.Code)
+	}
+}
+
+func TestAPIAdminPostsAcceptsStringTags(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := loggedInHandler(t, d, store)
+
+	rec := apiDo(t, h, http.MethodPost, "/api/v1/admin/posts",
+		`{"title":"String Tags","slug":"string-tags","status":"published","tags":["go","testing"]}`, withSession)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("status = %d, want 201; body=%s", rec.Code, rec.Body.String())
+	}
+	created := decodeBody[db.Post](t, rec)
+	if len(created.Tags) != 2 || created.Tags[0].Slug != "go" || created.Tags[1].Slug != "testing" {
+		t.Fatalf("tags = %+v", created.Tags)
+	}
+}
+
+func TestAPIAdminPostsDuplicateSlugIs409(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := loggedInHandler(t, d, store)
+	publishPost(t, db.NewPostRepo(d), "First", "dup", "draft", "body", nil)
+
+	rec := apiDo(t, h, http.MethodPost, "/api/v1/admin/posts",
+		`{"title":"Second","slug":"dup","status":"draft"}`, withSession)
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("status = %d, want 409; body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestAPIAdminPostsUpdateKeepsStatusWhenOmitted(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := loggedInHandler(t, d, store)
+	id := publishPost(t, db.NewPostRepo(d), "Live", "live", "published", "body", nil)
+
+	rec := apiDo(t, h, http.MethodPut, "/api/v1/admin/posts/"+itoa(id),
+		`{"title":"Live Two","slug":"live"}`, withSession)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body=%s", rec.Code, rec.Body.String())
+	}
+	if _, err := db.NewPostRepo(d).PublishedBySlug("live"); err != nil {
+		t.Fatalf("post was unpublished by an update that omitted status: %v", err)
+	}
+}
+
+func TestAPIPostPublishedAtUsesSiteOffset(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newTestHandlerWith(t, d, store)
+	when := time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
+	if _, err := db.NewPostRepo(d).Create(&db.Post{
+		Slug: "offset", Title: "Offset", Status: "published", PublishedAt: &when,
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	rec := apiDo(t, h, http.MethodGet, "/api/v1/posts/offset", "", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	body := decodeBody[apiPost](t, rec)
+	if body.PublishedAt == nil || *body.PublishedAt != "2026-09-01T14:00:00+02:00" {
+		t.Fatalf("published_at = %v, want 2026-09-01T14:00:00+02:00", body.PublishedAt)
 	}
 }
