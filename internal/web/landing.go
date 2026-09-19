@@ -38,9 +38,19 @@ func LoadContent(d *sql.DB) (*db.SiteContent, error) {
 	}
 
 	slug := settings["active_theme"]
-	row, err := db.NewThemeRepo(d).GetBySlug(slug)
+	repoTheme := db.NewThemeRepo(d)
+	row, err := repoTheme.GetBySlug(slug)
 	if err != nil {
 		return nil, err
+	}
+	if slug != "johansen" {
+		if base, err := repoTheme.GetBySlug("johansen"); err == nil {
+			merged := *row
+			merged.TokensBase = mergeThemeTokens(base.TokensBase, row.TokensBase)
+			merged.TokensLight = mergeThemeTokens(base.TokensLight, row.TokensLight)
+			merged.TokensDark = mergeThemeTokens(base.TokensDark, row.TokensDark)
+			row = &merged
+		}
 	}
 
 	pages, err := db.NewPageSeoRepo(d).List()

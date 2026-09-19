@@ -158,3 +158,18 @@ func TestValidateRejectsBreakingValues(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateRejectsBadSlug(t *testing.T) {
+	for _, slug := range []string{"", `x"></style><script>`, "Upper", "has space", "a/b", "-leading"} {
+		th := Johansen()
+		th.Slug = slug
+		if err := Validate(th); err == nil {
+			t.Errorf("Validate accepted slug %q", slug)
+		}
+	}
+	th := Johansen()
+	th.Slug = "valid-slug-2"
+	if err := Validate(th); err != nil {
+		t.Errorf("Validate rejected a valid slug: %v", err)
+	}
+}

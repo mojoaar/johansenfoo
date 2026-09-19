@@ -10,7 +10,6 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/mojoaar/johansenfoo/internal/db"
-	"github.com/mojoaar/johansenfoo/internal/theme"
 )
 
 func adminThemesGetHandler(d Deps) http.HandlerFunc {
@@ -105,14 +104,6 @@ func themeFromForm(r *http.Request, id int64) (*db.Theme, error) {
 	if th.Slug == "" || th.Name == "" {
 		return nil, errors.New("slug and name are required")
 	}
-	if err := theme.Validate(theme.Theme{
-		Slug:  th.Slug,
-		Base:  th.TokensBase,
-		Light: th.TokensLight,
-		Dark:  th.TokensDark,
-	}); err != nil {
-		return nil, err
-	}
 	return th, nil
 }
 
@@ -124,6 +115,10 @@ func adminThemeCreateHandler(d Deps) http.HandlerFunc {
 		}
 		th, err := themeFromForm(r, 0)
 		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := validateAPITheme(th); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -155,7 +150,28 @@ func adminThemeUpdateHandler(d Deps) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err := db.NewThemeRepo(d.DB).Update(th); err != nil {
+		repo := db.NewThemeRepo(d.DB)
+		existing, err := repo.GetByID(id)
+		if err != nil {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		merged := *existing
+		merged.Slug = th.Slug
+		merged.Name = th.Name
+		merged.Description = th.Description
+		merged.TokensBase = mergeThemeTokens(existing.TokensBase, th.TokensBase)
+		merged.TokensLight = mergeThemeTokens(existing.TokensLight, th.TokensLight)
+		merged.TokensDark = mergeThemeTokens(existing.TokensDark, th.TokensDark)
+		if err := validateAPITheme(&merged); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := repo.Update(&merged); err != nil {
+			if errors.Is(err, db.ErrThemeProtected) {
+				http.Error(w, "the base and active themes cannot be renamed", http.StatusBadRequest)
+				return
+			}
 			http.Error(w, "save failed", http.StatusInternalServerError)
 			return
 		}

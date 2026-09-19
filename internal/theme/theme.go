@@ -2,9 +2,16 @@ package theme
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 )
+
+var slugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
+
+func validSlug(s string) bool {
+	return len(s) > 0 && len(s) <= 64 && slugPattern.MatchString(s)
+}
 
 type Theme struct {
 	Slug        string
@@ -44,6 +51,9 @@ func known() map[string]bool {
 }
 
 func Validate(t Theme) error {
+	if !validSlug(t.Slug) {
+		return fmt.Errorf("theme slug %q is invalid", t.Slug)
+	}
 	knownTokens := known()
 
 	for _, section := range []struct {

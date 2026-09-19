@@ -114,3 +114,45 @@ func TestAdminThemeDeleteNew(t *testing.T) {
 		t.Fatal("theme still exists after delete")
 	}
 }
+
+func TestAdminThemeEditRendersTokens(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	base, err := db.NewThemeRepo(d).GetBySlug("johansen")
+	if err != nil {
+		t.Fatalf("GetBySlug: %v", err)
+	}
+	rec := adminRequest(t, d, store, http.MethodGet, "/admin/themes/"+itoa(base.ID), nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "--bg") {
+		t.Error("edit form does not render token JSON")
+	}
+}
+
+func TestAdminThemeUpdateMergesPartial(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	adminRequest(t, d, store, http.MethodPost, "/admin/themes", themeForm(t, d, "partial", "Partial"))
+	th, err := db.NewThemeRepo(d).GetBySlug("partial")
+	if err != nil {
+		t.Fatalf("GetBySlug: %v", err)
+	}
+
+	rec := adminRequest(t, d, store, http.MethodPost, "/admin/themes/"+itoa(th.ID), url.Values{
+		"slug":         {"partial"},
+		"name":         {"Partial"},
+		"tokens_light": {`{"--green":"#abcdef"}`},
+	})
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d, want 303; body=%s", rec.Code, rec.Body.String())
+	}
+	got, err := db.NewThemeRepo(d).GetBySlug("partial")
+	if err != nil {
+		t.Fatalf("GetBySlug: %v", err)
+	}
+	if got.TokensLight["--green"] != "#abcdef" || got.TokensLight["--accent"] == "" {
+		t.Errorf("partial update not merged: %+v", got.TokensLight)
+	}
+}

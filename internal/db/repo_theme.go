@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+
+	"github.com/mojoaar/johansenfoo/internal/theme"
 )
 
 var (
@@ -95,7 +97,19 @@ func (r *ThemeRepo) List() ([]Theme, error) {
 	return out, rows.Err()
 }
 
+func themeToDomain(t *Theme) theme.Theme {
+	return theme.Theme{
+		Slug:  t.Slug,
+		Base:  t.TokensBase,
+		Light: t.TokensLight,
+		Dark:  t.TokensDark,
+	}
+}
+
 func (r *ThemeRepo) Create(t *Theme) (int64, error) {
+	if err := theme.Validate(themeToDomain(t)); err != nil {
+		return 0, err
+	}
 	base, light, dark, err := marshalTokens(t)
 	if err != nil {
 		return 0, err
@@ -116,6 +130,15 @@ func (r *ThemeRepo) Update(t *Theme) error {
 	if err != nil {
 		return err
 	}
+	if t.Slug != existing.Slug {
+		active, err := r.ActiveSlug()
+		if err != nil {
+			return err
+		}
+		if existing.Slug == "johansen" || existing.Slug == active {
+			return ErrThemeProtected
+		}
+	}
 	merged := &Theme{
 		ID:          t.ID,
 		Slug:        t.Slug,
@@ -125,6 +148,9 @@ func (r *ThemeRepo) Update(t *Theme) error {
 		TokensBase:  mergeTokens(existing.TokensBase, t.TokensBase),
 		TokensLight: mergeTokens(existing.TokensLight, t.TokensLight),
 		TokensDark:  mergeTokens(existing.TokensDark, t.TokensDark),
+	}
+	if err := theme.Validate(themeToDomain(merged)); err != nil {
+		return err
 	}
 	base, light, dark, err := marshalTokens(merged)
 	if err != nil {

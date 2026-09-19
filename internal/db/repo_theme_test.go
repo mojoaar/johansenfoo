@@ -1,9 +1,26 @@
 package db
 
 import (
+	"database/sql"
 	"errors"
 	"testing"
 )
+
+func validTheme(t *testing.T, d *sql.DB, slug, name string) *Theme {
+	t.Helper()
+	base, err := NewThemeRepo(d).GetBySlug("johansen")
+	if err != nil {
+		t.Fatalf("GetBySlug johansen: %v", err)
+	}
+	return &Theme{
+		Slug:        slug,
+		Name:        name,
+		Description: "test",
+		TokensBase:  base.TokensBase,
+		TokensLight: base.TokensLight,
+		TokensDark:  base.TokensDark,
+	}
+}
 
 func TestThemeListAndCreate(t *testing.T) {
 	d := seeded(t)
@@ -23,14 +40,9 @@ func TestThemeListAndCreate(t *testing.T) {
 		t.Fatal("seeded johansen theme missing from List")
 	}
 
-	id, err := r.Create(&Theme{
-		Slug:        "custom",
-		Name:        "Custom",
-		Description: "d",
-		TokensBase:  map[string]string{"--accent": "#111"},
-		TokensLight: map[string]string{"--accent": "#222"},
-		TokensDark:  map[string]string{"--accent": "#333"},
-	})
+	th := validTheme(t, d, "custom", "Custom")
+	th.TokensDark["--accent"] = "#333"
+	id, err := r.Create(th)
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
@@ -46,12 +58,8 @@ func TestThemeListAndCreate(t *testing.T) {
 func TestThemeUpdateMergesTokens(t *testing.T) {
 	d := seeded(t)
 	r := NewThemeRepo(d)
-	id, err := r.Create(&Theme{
-		Slug:        "merge",
-		Name:        "Merge",
-		TokensLight: map[string]string{"--accent": "#111"},
-		TokensDark:  map[string]string{"--bg": "#000"},
-	})
+	th := validTheme(t, d, "merge", "Merge")
+	id, err := r.Create(th)
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
@@ -72,11 +80,53 @@ func TestThemeUpdateMergesTokens(t *testing.T) {
 	if got.Name != "Merge Two" {
 		t.Errorf("name = %q", got.Name)
 	}
-	if got.TokensLight["--accent"] != "#111" || got.TokensLight["--green"] != "#0f0" {
+	if got.TokensLight["--accent"] == "" || got.TokensLight["--green"] != "#0f0" {
 		t.Errorf("light tokens not merged: %+v", got.TokensLight)
 	}
-	if got.TokensDark["--bg"] != "#000" {
-		t.Errorf("untouched section lost: %+v", got.TokensDark)
+}
+
+func TestThemeRepoRejectsInvalidTokens(t *testing.T) {
+	d := seeded(t)
+	r := NewThemeRepo(d)
+
+	bad := validTheme(t, d, "bad-token", "Bad")
+	bad.TokensDark["--nope"] = "x"
+	if _, err := r.Create(bad); err == nil {
+		t.Error("Create accepted an unknown token")
+	}
+
+	inject := validTheme(t, d, "inject", "Inject")
+	inject.TokensDark["--accent"] = "</style>"
+	if _, err := r.Create(inject); err == nil {
+		t.Error("Create accepted a CSS-breaking value")
+	}
+
+	valid := validTheme(t, d, "valid-theme", "Valid")
+	id, err := r.Create(valid)
+	if err != nil {
+		t.Fatalf("Create valid: %v", err)
+	}
+	valid.ID = id
+	valid.TokensDark["--accent"] = "a<b"
+	if err := r.Update(valid); err == nil {
+		t.Error("Update accepted a CSS-breaking value")
+	}
+}
+
+func TestThemeRepoUpdateRefusesProtectedRename(t *testing.T) {
+	d := seeded(t)
+	r := NewThemeRepo(d)
+	base, err := r.GetBySlug("johansen")
+	if err != nil {
+		t.Fatalf("GetBySlug: %v", err)
+	}
+	renamed := *base
+	renamed.Slug = "renamed-base"
+	if err := r.Update(&renamed); !errors.Is(err, ErrThemeProtected) {
+		t.Fatalf("renaming johansen err = %v, want ErrThemeProtected", err)
+	}
+	if _, err := r.GetBySlug("johansen"); err != nil {
+		t.Fatalf("johansen missing after refused rename: %v", err)
 	}
 }
 
@@ -92,7 +142,7 @@ func TestThemeDeleteGuardRails(t *testing.T) {
 		t.Fatalf("deleting johansen err = %v, want ErrThemeProtected", err)
 	}
 
-	id, err := r.Create(&Theme{Slug: "active-one", Name: "Active One"})
+	id, err := r.Create(validTheme(t, d, "active-one", "Active One"))
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}

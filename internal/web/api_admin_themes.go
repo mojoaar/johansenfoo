@@ -125,6 +125,10 @@ func apiAdminThemesUpdateHandler(d Deps) http.HandlerFunc {
 			return
 		}
 		if err := repo.Update(&merged); err != nil {
+			if errors.Is(err, db.ErrThemeProtected) {
+				writeAPIError(w, http.StatusConflict, "the base and active themes cannot be renamed")
+				return
+			}
 			writeAPIError(w, http.StatusInternalServerError, "save failed")
 			return
 		}
