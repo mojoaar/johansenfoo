@@ -2,12 +2,15 @@ package web
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
+
+var apiMaxBodyBytes int64 = 32 << 20
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -24,8 +27,13 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) bool {
 		writeAPIError(w, http.StatusUnsupportedMediaType, "content-type must be application/json")
 		return false
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	r.Body = http.MaxBytesReader(w, r.Body, apiMaxBodyBytes)
 	if err := json.NewDecoder(r.Body).Decode(dst); err != nil {
+		var maxErr *http.MaxBytesError
+		if errors.As(err, &maxErr) {
+			writeAPIError(w, http.StatusRequestEntityTooLarge, "request body too large")
+			return false
+		}
 		writeAPIError(w, http.StatusBadRequest, "invalid json")
 		return false
 	}

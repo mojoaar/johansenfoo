@@ -55,6 +55,18 @@ func Export(d *sql.DB) (*Snapshot, error) {
 			delete(settings, k)
 		}
 	}
+	if social == nil {
+		social = []SocialLink{}
+	}
+	if projects == nil {
+		projects = []Project{}
+	}
+	if experience == nil {
+		experience = []Experience{}
+	}
+	if skills == nil {
+		skills = []Skill{}
+	}
 	return &Snapshot{
 		Version:    SnapshotVersion,
 		ExportedAt: time.Now().UTC().Format(time.RFC3339),
@@ -74,12 +86,25 @@ func Import(d *sql.DB, s *Snapshot) error {
 	if s.Profile.Name == "" {
 		return errors.New("snapshot profile name is required")
 	}
+	if s.Social == nil || s.Projects == nil || s.Experience == nil || s.Skills == nil {
+		return errors.New("snapshot is missing one or more content sections")
+	}
 
 	tx, err := d.Begin()
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+
+	if slug, ok := s.Settings["active_theme"]; ok {
+		var n int
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM theme WHERE slug = ?`, slug).Scan(&n); err != nil {
+			return err
+		}
+		if n == 0 {
+			return errors.New("snapshot active_theme does not exist")
+		}
+	}
 
 	if _, err := tx.Exec(`DELETE FROM social_link`); err != nil {
 		return err

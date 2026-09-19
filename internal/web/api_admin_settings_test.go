@@ -72,3 +72,18 @@ func TestAdminAPIExportImportRoundTrip(t *testing.T) {
 		t.Errorf("public profile name = %q, want Imported Name (import did not reload)", got.Name)
 	}
 }
+
+func TestAPIRejectsOversizedBody(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := loggedInHandler(t, d, store)
+
+	old := apiMaxBodyBytes
+	apiMaxBodyBytes = 16
+	t.Cleanup(func() { apiMaxBodyBytes = old })
+
+	rec := apiDo(t, h, http.MethodPut, "/api/v1/admin/profile", `{"name":"a body well over sixteen bytes"}`, withSession)
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("status = %d, want 413; body=%s", rec.Code, rec.Body.String())
+	}
+}

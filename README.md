@@ -66,9 +66,11 @@ Admin (Bearer or session)
 
 Writes require `Content-Type: application/json`. Creates return `201` with the created resource,
 updates return `200` with the updated resource, deletes return `204`, and errors are
-`{"error": "..."}` with an appropriate status. `GET /api/v1/admin/export` produces a whole-content
-snapshot with the password hash and API key stripped; posting that snapshot back to
-`/api/v1/admin/import` restores the content in one transaction.
+`{"error": "..."}` with an appropriate status. `PUT` is a full replace: send every field, not just
+the changed one. `GET /api/v1/admin/export` produces a whole-content snapshot with the password
+hash and API key stripped; posting that snapshot back to `/api/v1/admin/import` restores the
+content in one transaction. An import must carry every content section and a valid `active_theme`,
+or it is rejected without changing anything.
 
 ## Build and run
 
