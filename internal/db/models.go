@@ -97,6 +97,7 @@ type Theme struct {
 	TokensBase  map[string]string
 	TokensLight map[string]string
 	TokensDark  map[string]string
+	Sort        int
 }
 
 type SiteContent struct {
