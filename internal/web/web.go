@@ -97,6 +97,8 @@ func New(d Deps) http.Handler {
 			})
 			apiAdmin.Put("/settings/posts", apiAdminPostsSettingHandler(d))
 			apiAdmin.Put("/settings/theme", apiAdminThemeSettingHandler(d))
+			apiAdmin.Get("/settings/seo", apiAdminSeoGetHandler(d))
+			apiAdmin.Put("/settings/seo", apiAdminSeoPutHandler(d))
 			apiAdmin.Get("/export", apiAdminExportHandler(d))
 			apiAdmin.Post("/import", apiAdminImportHandler(d))
 		})
