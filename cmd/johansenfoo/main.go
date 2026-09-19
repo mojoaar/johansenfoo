@@ -14,6 +14,7 @@ import (
 
 	"github.com/mojoaar/johansenfoo/internal/config"
 	"github.com/mojoaar/johansenfoo/internal/db"
+	"github.com/mojoaar/johansenfoo/internal/theme"
 	"github.com/mojoaar/johansenfoo/internal/web"
 )
 
@@ -43,6 +44,13 @@ func buildHandler(dataDir string) (http.Handler, *config.Config, func(), error) 
 	if err := db.Migrate(d); err != nil {
 		_ = d.Close()
 		return nil, nil, nil, fmt.Errorf("migrate: %w", err)
+	}
+
+	if n, err := db.SeedThemes(d, theme.Seeds()); err != nil {
+		_ = d.Close()
+		return nil, nil, nil, fmt.Errorf("seed themes: %w", err)
+	} else if n > 0 {
+		slog.Info("seeded themes", "count", n)
 	}
 
 	store, err := web.NewContentStore(d)
