@@ -85,18 +85,18 @@ func argStrings(req mcp.CallToolRequest, name string) []string {
 	return nil
 }
 
-func argStringMap(req mcp.CallToolRequest, name string) (map[string]string, bool) {
+func argStringMap(req mcp.CallToolRequest, name string) (map[string]string, bool, error) {
 	raw, ok := req.GetArguments()[name]
 	if !ok {
-		return nil, false
+		return nil, false, nil
 	}
 	body, err := json.Marshal(raw)
 	if err != nil {
-		return nil, false
+		return nil, true, err
 	}
 	var out map[string]string
 	if err := json.Unmarshal(body, &out); err != nil {
-		return nil, false
+		return nil, true, err
 	}
-	return out, true
+	return out, true, nil
 }

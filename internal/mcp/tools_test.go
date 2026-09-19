@@ -404,3 +404,45 @@ func TestThemeToolImportCatppuccin(t *testing.T) {
 		t.Error("unknown flavour did not error")
 	}
 }
+
+func TestThemeToolUpdateMergesPartialTokens(t *testing.T) {
+	b, _ := testBackend(t)
+	light, dark := johansenTokens(t, b)
+	callTool(t, b.createTheme, map[string]any{"slug": "partial", "name": "Partial", "tokens_light": light, "tokens_dark": dark})
+
+	updated := decode[db.Theme](t, callTool(t, b.updateTheme, map[string]any{
+		"slug": "partial", "tokens_dark": map[string]any{"--accent": "#ffffff"},
+	}))
+	if updated.TokensDark["--accent"] != "#ffffff" {
+		t.Fatalf("accent = %q, want #ffffff", updated.TokensDark["--accent"])
+	}
+	if updated.TokensDark["--bg"] == "" {
+		t.Error("partial update dropped the other tokens")
+	}
+}
+
+func TestThemeToolRejectsMalformedTokens(t *testing.T) {
+	b, _ := testBackend(t)
+	light, dark := johansenTokens(t, b)
+	callTool(t, b.createTheme, map[string]any{"slug": "typed", "name": "Typed", "tokens_light": light, "tokens_dark": dark})
+
+	res := callTool(t, b.updateTheme, map[string]any{
+		"slug": "typed", "tokens_dark": map[string]any{"--accent": 123},
+	})
+	if !res.IsError {
+		t.Fatal("a non-string token value was silently accepted")
+	}
+}
+
+func TestThemeToolGetResolvesInheritance(t *testing.T) {
+	b, _ := testBackend(t)
+	light, dark := johansenTokens(t, b)
+	callTool(t, b.createTheme, map[string]any{
+		"slug": "bare-theme", "name": "Bare", "tokens_base": map[string]any{},
+		"tokens_light": light, "tokens_dark": dark,
+	})
+	got := decode[db.Theme](t, callTool(t, b.getTheme, map[string]any{"slug": "bare-theme"}))
+	if got.TokensBase["--font-sans"] == "" {
+		t.Errorf("get_theme did not resolve inherited base tokens: %+v", got.TokensBase)
+	}
+}

@@ -10,7 +10,18 @@ import (
 	"github.com/mojoaar/johansenfoo/internal/theme"
 )
 
-func themeFromArgs(req mcp.CallToolRequest, slug, name, description string, existing *db.Theme) db.Theme {
+func mergeTokenMaps(existing, incoming map[string]string) map[string]string {
+	out := make(map[string]string, len(existing)+len(incoming))
+	for k, v := range existing {
+		out[k] = v
+	}
+	for k, v := range incoming {
+		out[k] = v
+	}
+	return out
+}
+
+func themeFromArgs(req mcp.CallToolRequest, slug, name, description string, existing *db.Theme) (db.Theme, error) {
 	t := db.Theme{Slug: slug, Name: name, Description: description}
 	if existing != nil {
 		t = *existing
@@ -22,16 +33,29 @@ func themeFromArgs(req mcp.CallToolRequest, slug, name, description string, exis
 			t.Description = description
 		}
 	}
-	if m, ok := argStringMap(req, "tokens_base"); ok {
-		t.TokensBase = m
+	sections := []struct {
+		arg  string
+		into *map[string]string
+	}{
+		{"tokens_base", &t.TokensBase},
+		{"tokens_light", &t.TokensLight},
+		{"tokens_dark", &t.TokensDark},
 	}
-	if m, ok := argStringMap(req, "tokens_light"); ok {
-		t.TokensLight = m
+	for _, section := range sections {
+		m, present, err := argStringMap(req, section.arg)
+		if err != nil {
+			return db.Theme{}, err
+		}
+		if !present {
+			continue
+		}
+		if existing != nil {
+			*section.into = mergeTokenMaps(*section.into, m)
+		} else {
+			*section.into = m
+		}
 	}
-	if m, ok := argStringMap(req, "tokens_dark"); ok {
-		t.TokensDark = m
-	}
-	return t
+	return t, nil
 }
 
 func themeSlug(name, slug string) string {
@@ -55,6 +79,13 @@ func (b Backend) getTheme(ctx context.Context, req mcp.CallToolRequest) (*mcp.Ca
 	if err != nil {
 		return mcp.NewToolResultError("theme not found"), nil
 	}
+	if slug != "johansen" {
+		if base, err := db.NewThemeRepo(b.DB).GetBySlug("johansen"); err == nil {
+			th.TokensBase = mergeTokenMaps(base.TokensBase, th.TokensBase)
+			th.TokensLight = mergeTokenMaps(base.TokensLight, th.TokensLight)
+			th.TokensDark = mergeTokenMaps(base.TokensDark, th.TokensDark)
+		}
+	}
 	return jsonResult(th, nil)
 }
 
@@ -63,7 +94,10 @@ func (b Backend) createTheme(ctx context.Context, req mcp.CallToolRequest) (*mcp
 	if name == "" {
 		return mcp.NewToolResultError("name is required"), nil
 	}
-	t := themeFromArgs(req, themeSlug(name, argString(req, "slug")), name, argString(req, "description"), nil)
+	t, err := themeFromArgs(req, themeSlug(name, argString(req, "slug")), name, argString(req, "description"), nil)
+	if err != nil {
+		return mcp.NewToolResultError("invalid token maps"), nil
+	}
 	if err := theme.Validate(theme.Theme{Slug: t.Slug, Base: t.TokensBase, Light: t.TokensLight, Dark: t.TokensDark}); err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
@@ -92,7 +126,10 @@ func (b Backend) updateTheme(ctx context.Context, req mcp.CallToolRequest) (*mcp
 	if err != nil {
 		return mcp.NewToolResultError("theme not found"), nil
 	}
-	merged := themeFromArgs(req, slug, argString(req, "name"), argString(req, "description"), existing)
+	merged, err := themeFromArgs(req, slug, argString(req, "name"), argString(req, "description"), existing)
+	if err != nil {
+		return mcp.NewToolResultError("invalid token maps"), nil
+	}
 	if err := theme.Validate(theme.Theme{Slug: merged.Slug, Base: merged.TokensBase, Light: merged.TokensLight, Dark: merged.TokensDark}); err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
@@ -174,7 +211,11 @@ func (b Backend) importTheme(ctx context.Context, req mcp.CallToolRequest) (*mcp
 			TokensDark:  seed.Dark,
 		}
 	} else {
-		t = themeFromArgs(req, slug, name, argString(req, "description"), nil)
+		var err error
+		t, err = themeFromArgs(req, slug, name, argString(req, "description"), nil)
+		if err != nil {
+			return mcp.NewToolResultError("invalid token maps"), nil
+		}
 		if len(t.TokensLight) == 0 && len(t.TokensDark) == 0 {
 			return mcp.NewToolResultError("pass a flavour or token maps"), nil
 		}

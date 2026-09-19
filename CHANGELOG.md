@@ -13,9 +13,9 @@ All notable changes to this project are documented here. The format follows
 - Themes: a widened token vocabulary (colour pairs, typography, shape/depth, code tokens), hardened
   validation that rejects CSS/HTML-breaking values, full theme CRUD with guard rails, an admin
   token editor at `/admin/themes`, and `GET|POST|GET|PUT|DELETE /api/v1/admin/themes` plus activate.
-- MCP server at `/mcp` (streamable HTTP) with API-key auth and a 100 req/min per-IP limit, and 28
+- MCP server at `/mcp` (streamable HTTP) with API-key auth and a 100 req/min per-IP limit, and 35
   tools covering profile, projects, experience, skills, posts, tags, the posts kill switch, SEO
-  settings, and content export/import.
+  settings, themes, and content export/import.
 - SEO: metadata resolved with per-page (`page_seo`) and per-post overrides over admin-editable
   global defaults; title template, Twitter site, three-source `noindex`, and `BlogPosting`
   structured data on every published post.
