@@ -39,6 +39,7 @@ func New(d Deps) http.Handler {
 		panic(err)
 	}
 	r.Handle("/static/*", static)
+	r.Handle("/metrics", metricsHandler())
 
 	r.Get("/", landingHandler(d))
 	r.Get("/me", meHandler(d))
