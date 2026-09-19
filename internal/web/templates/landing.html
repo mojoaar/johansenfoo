@@ -1,4 +1,4 @@
-{{define "content"}}
+{{define "landing"}}{{template "public_head" .}}
         <nav aria-label="Main navigation">
             <a href="#home" class="nav-logo">johansen.foo</a>
             <button class="hamburger" id="hamburger" aria-label="Toggle navigation" aria-expanded="false" aria-controls="navLinks">&#9776;</button>
@@ -6,6 +6,7 @@
                 <li><a href="#home">Home</a></li>
                 <li><a href="#projects">Projects</a></li>
                 <li><a href="#about">About</a></li>
+                {{if .PostsEnabled}}<li><a href="/posts">Posts</a></li>{{end}}
                 <li>
                     <button class="theme-toggle" id="themeToggle" aria-label="Toggle colour scheme" title="Toggle light/dark mode">
                         <span class="toggle-icon moon" aria-hidden="true">🌙</span>
@@ -153,4 +154,4 @@
                 window.addEventListener("resize", equalizeCards);
             });
         </script>
-{{end}}
+{{template "public_foot" .}}{{end}}

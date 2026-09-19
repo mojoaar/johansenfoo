@@ -1,0 +1,162 @@
+package web
+
+import (
+	"errors"
+	"html/template"
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+
+	"github.com/mojoaar/johansenfoo/internal/db"
+	"github.com/mojoaar/johansenfoo/internal/markdown"
+	"github.com/mojoaar/johansenfoo/internal/theme"
+)
+
+const postsPerPage = 10
+
+type postView struct {
+	db.Post
+	Date string
+}
+
+func toView(p db.Post, loc *time.Location) postView {
+	v := postView{Post: p}
+	if p.PublishedAt != nil {
+		v.Date = formatPostDate(*p.PublishedAt, loc)
+	}
+	return v
+}
+
+func postsEnabled(c *db.SiteContent) bool {
+	if c == nil {
+		return false
+	}
+	return c.Settings["posts_enabled"] != "false"
+}
+
+func siteLocation(c *db.SiteContent) *time.Location {
+	if c != nil {
+		if name := c.Settings["timezone"]; name != "" {
+			if loc, err := time.LoadLocation(name); err == nil {
+				return loc
+			}
+		}
+	}
+	return time.UTC
+}
+
+func formatPostDate(t time.Time, loc *time.Location) string {
+	return t.In(loc).Format("2006-01-02 15:04")
+}
+
+func pageParam(r *http.Request) int {
+	n, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil || n < 1 {
+		return 1
+	}
+	return n
+}
+
+func totalPages(total int) int {
+	if total <= 0 {
+		return 1
+	}
+	return (total + postsPerPage - 1) / postsPerPage
+}
+
+func newPostPage(d Deps, title, route string) page {
+	c := d.Content.Current()
+	p := page{
+		Title:          title,
+		PostsEnabled:   postsEnabled(c),
+		StructuredData: personSchema(c),
+		Profile:        c.Profile,
+		Social:         visibleSocial(c.Social),
+		ThemeSlug:      c.Theme.Slug,
+		ThemeCSS:       template.CSS(theme.CSS(themeFromRow(c.Theme))),
+	}
+	meta := resolveMeta(c, route)
+	meta.Title = title
+	p.Meta = meta
+	return p
+}
+
+func postIndexHandler(d Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c := d.Content.Current()
+		if c == nil {
+			http.Error(w, "content unavailable", http.StatusInternalServerError)
+			return
+		}
+		if !postsEnabled(c) {
+			http.NotFound(w, r)
+			return
+		}
+		repo := db.NewPostRepo(d.DB)
+		pageNum := pageParam(r)
+		offset := (pageNum - 1) * postsPerPage
+		tagSlug := r.URL.Query().Get("tag")
+
+		var (
+			posts []db.Post
+			total int
+			err   error
+		)
+		if tagSlug != "" {
+			total, err = repo.CountByTag(tagSlug)
+			if err == nil {
+				posts, err = repo.ByTag(tagSlug, postsPerPage, offset)
+			}
+		} else {
+			total, err = repo.CountPublished()
+			if err == nil {
+				posts, err = repo.Published(postsPerPage, offset)
+			}
+		}
+		if err != nil {
+			http.Error(w, "storage error", http.StatusInternalServerError)
+			return
+		}
+
+		loc := siteLocation(c)
+		views := make([]postView, 0, len(posts))
+		for _, p := range posts {
+			views = append(views, toView(p, loc))
+		}
+		data := newPostPage(d, "Posts", "/posts")
+		data.Posts = views
+		data.PageNum = pageNum
+		data.TotalPages = totalPages(total)
+		renderPage(w, "posts", data)
+	}
+}
+
+func postHandler(d Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c := d.Content.Current()
+		if c == nil {
+			http.Error(w, "content unavailable", http.StatusInternalServerError)
+			return
+		}
+		if !postsEnabled(c) {
+			http.NotFound(w, r)
+			return
+		}
+		slug := chi.URLParam(r, "slug")
+		post, err := db.NewPostRepo(d.DB).PublishedBySlug(slug)
+		if errors.Is(err, db.ErrPostNotFound) {
+			http.NotFound(w, r)
+			return
+		}
+		if err != nil {
+			http.Error(w, "storage error", http.StatusInternalServerError)
+			return
+		}
+		data := newPostPage(d, post.Title, "/posts/"+post.Slug)
+		data.Post = toView(*post, siteLocation(c))
+		data.PostBody = markdown.Render(post.BodyMD)
+		renderPage(w, "post", data)
+	}
+}

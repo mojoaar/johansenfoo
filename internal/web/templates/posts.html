@@ -1,0 +1,29 @@
+{{define "posts"}}{{template "public_head" .}}
+{{template "post_nav" .}}
+        <main class="posts-main container">
+            <p class="section-label">// posts</p>
+            <h1 class="section-title">Writing</h1>
+            {{if .Posts}}
+            <ul class="post-list">
+                {{range .Posts}}
+                <li class="post-item">
+                    <h2 class="post-item-title"><a href="/posts/{{.Slug}}">{{.Title}}</a></h2>
+                    {{if .Date}}<p class="post-date">{{.Date}}</p>{{end}}
+                    {{if .Summary}}<p class="post-summary">{{.Summary}}</p>{{end}}
+                    {{if .Tags}}<p class="post-tags">{{range .Tags}}<a class="tag-chip" href="/tags/{{.Slug}}">{{.Name}}</a>{{end}}</p>{{end}}
+                </li>
+                {{end}}
+            </ul>
+            {{else}}
+            <p>No posts yet.</p>
+            {{end}}
+            {{if gt .TotalPages 1}}
+            <nav class="pagination" aria-label="Pagination">
+                {{if gt .PageNum 1}}<a href="/posts?page={{dec .PageNum}}">Previous</a>{{end}}
+                <span>Page {{.PageNum}} of {{.TotalPages}}</span>
+                {{if lt .PageNum .TotalPages}}<a href="/posts?page={{inc .PageNum}}">Next</a>{{end}}
+            </nav>
+            {{end}}
+        </main>
+{{template "post_scripts" .}}
+{{template "public_foot" .}}{{end}}

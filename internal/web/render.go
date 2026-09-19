@@ -40,6 +40,14 @@ type page struct {
 	Project        db.Project
 	Item           db.Experience
 	Skill          db.Skill
+	Posts          []postView
+	Post           postView
+	PostBody       template.HTML
+	PageNum        int
+	TotalPages     int
+	Tags           []db.Tag
+	Tag            db.Tag
+	PostsEnabled   bool
 }
 
 var templates = template.Must(
@@ -47,6 +55,8 @@ var templates = template.Must(
 		"icon": func(name, class string) template.HTML {
 			return icons.Inline(name, class)
 		},
+		"inc": func(n int) int { return n + 1 },
+		"dec": func(n int) int { return n - 1 },
 	}).ParseFS(templateFS, "templates/*.html"),
 )
 

@@ -1,0 +1,15 @@
+{{define "post"}}{{template "public_head" .}}
+{{template "post_nav" .}}
+        <main class="post-main container">
+            <article class="post">
+                <p class="section-label">// post</p>
+                <h1 class="post-title">{{.Post.Title}}</h1>
+                {{if .Post.Date}}<p class="post-date">{{.Post.Date}}</p>{{end}}
+                {{if .Post.HeroImageURL}}<img class="post-hero" src="{{.Post.HeroImageURL}}" alt="{{.Post.HeroImageAlt}}" loading="lazy" decoding="async">{{end}}
+                <div class="post-body">{{.PostBody}}</div>
+                {{if .Post.Tags}}<p class="post-tags">{{range .Post.Tags}}<a class="tag-chip" href="/tags/{{.Slug}}">{{.Name}}</a>{{end}}</p>{{end}}
+            </article>
+            <p class="post-back"><a href="/posts">&larr; All posts</a></p>
+        </main>
+{{template "post_scripts" .}}
+{{template "public_foot" .}}{{end}}

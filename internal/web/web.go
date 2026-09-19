@@ -43,6 +43,9 @@ func New(d Deps) http.Handler {
 	r.Get("/sitemap.xml", sitemapHandler(d))
 	r.Get("/health", healthHandler(d))
 
+	r.Get("/posts", postIndexHandler(d))
+	r.Get("/posts/{slug}", postHandler(d))
+
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Get("/profile", apiProfileHandler(d))
 		api.Get("/projects", apiProjectsHandler(d))

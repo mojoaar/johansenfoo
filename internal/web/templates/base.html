@@ -1,4 +1,4 @@
-{{define "base"}}<!doctype html>
+{{define "public_head"}}<!doctype html>
 <html lang="en" data-theme="{{.ThemeSlug}}" data-mode="dark">
     <head>
         <meta charset="UTF-8" />
@@ -56,7 +56,41 @@
         </script>
     </head>
     <body>
-        {{template "content" .}}
+{{end}}
+
+{{define "public_foot"}}
     </body>
 </html>
+{{end}}
+
+{{define "post_nav"}}
+        <nav aria-label="Main navigation" class="post-nav">
+            <a href="/" class="nav-logo">johansen.foo</a>
+            <ul class="nav-links" role="list">
+                <li><a href="/#projects">Projects</a></li>
+                <li><a href="/#about">About</a></li>
+                {{if .PostsEnabled}}<li><a href="/posts">Posts</a></li>{{end}}
+                <li>
+                    <button class="theme-toggle" id="themeToggle" aria-label="Toggle colour scheme" title="Toggle light/dark mode">
+                        <span class="toggle-icon moon" aria-hidden="true">🌙</span>
+                        <span class="toggle-icon sun" aria-hidden="true">☀️</span>
+                    </button>
+                </li>
+            </ul>
+        </nav>
+{{end}}
+
+{{define "post_scripts"}}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                var toggle = document.getElementById("themeToggle");
+                if (!toggle) return;
+                toggle.addEventListener("click", function () {
+                    var current = document.documentElement.getAttribute("data-mode");
+                    var next = current === "light" ? "dark" : "light";
+                    document.documentElement.setAttribute("data-mode", next);
+                    localStorage.setItem("mode", next);
+                });
+            });
+        </script>
 {{end}}
