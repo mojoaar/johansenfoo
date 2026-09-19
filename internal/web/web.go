@@ -58,6 +58,27 @@ func New(d Deps) http.Handler {
 			apiAdmin.Post("/social", apiAdminSocialCreateHandler(d))
 			apiAdmin.Put("/social/{id}", apiAdminSocialUpdateHandler(d))
 			apiAdmin.Delete("/social/{id}", apiAdminSocialDeleteHandler(d))
+			apiAdmin.Route("/projects", func(r chi.Router) {
+				r.Get("/", apiCRUDHandler(d, projectCRUD(d), "project"))
+				r.Post("/", apiCRUDHandler(d, projectCRUD(d), "project"))
+				r.Get("/{id}", apiCRUDHandler(d, projectCRUD(d), "project"))
+				r.Put("/{id}", apiCRUDHandler(d, projectCRUD(d), "project"))
+				r.Delete("/{id}", apiCRUDHandler(d, projectCRUD(d), "project"))
+			})
+			apiAdmin.Route("/experience", func(r chi.Router) {
+				r.Get("/", apiCRUDHandler(d, experienceCRUD(d), "experience"))
+				r.Post("/", apiCRUDHandler(d, experienceCRUD(d), "experience"))
+				r.Get("/{id}", apiCRUDHandler(d, experienceCRUD(d), "experience"))
+				r.Put("/{id}", apiCRUDHandler(d, experienceCRUD(d), "experience"))
+				r.Delete("/{id}", apiCRUDHandler(d, experienceCRUD(d), "experience"))
+			})
+			apiAdmin.Route("/skills", func(r chi.Router) {
+				r.Get("/", apiCRUDHandler(d, skillCRUD(d), "skill"))
+				r.Post("/", apiCRUDHandler(d, skillCRUD(d), "skill"))
+				r.Get("/{id}", apiCRUDHandler(d, skillCRUD(d), "skill"))
+				r.Put("/{id}", apiCRUDHandler(d, skillCRUD(d), "skill"))
+				r.Delete("/{id}", apiCRUDHandler(d, skillCRUD(d), "skill"))
+			})
 		})
 	})
 
