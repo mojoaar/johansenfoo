@@ -1,0 +1,26 @@
+{{define "admin_themes"}}{{template "admin_head" .}}
+<div class="actions">
+  <a href="/admin/themes/new"><button type="button">New theme</button></a>
+</div>
+<table class="admin-table">
+  <thead>
+    <tr><th>Name</th><th>Slug</th><th>Description</th><th></th></tr>
+  </thead>
+  <tbody>
+    {{range .Themes}}
+    <tr>
+      <td><a href="/admin/themes/{{.ID}}">{{.Name}}</a>{{if eq .Slug $.ActiveTheme}} <strong>(active)</strong>{{end}}</td>
+      <td>{{.Slug}}</td>
+      <td>{{.Description}}</td>
+      <td class="row-actions">
+        {{if ne .Slug $.ActiveTheme}}
+        <form method="post" action="/admin/themes/{{.ID}}/activate"><input type="hidden" name="csrf_token" value="{{$.CSRF}}"><button class="link" type="submit">Set active</button></form>
+        {{end}}
+        <a href="/admin/themes/{{.ID}}">Edit</a>
+        <form method="post" action="/admin/themes/{{.ID}}/delete"><input type="hidden" name="csrf_token" value="{{$.CSRF}}"><button class="link" type="submit">Delete</button></form>
+      </td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{template "admin_foot" .}}{{end}}

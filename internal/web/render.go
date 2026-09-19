@@ -3,6 +3,7 @@ package web
 import (
 	"bytes"
 	"embed"
+	"encoding/json"
 	"html/template"
 	"net/http"
 	"strings"
@@ -53,6 +54,9 @@ type page struct {
 	PostsEnabled   bool
 	Settings       map[string]string
 	PageSeoList    []db.PageSeo
+	Themes         []db.Theme
+	Theme          db.Theme
+	ActiveTheme    string
 }
 
 var templates = template.Must(
@@ -66,6 +70,13 @@ var templates = template.Must(
 				names = append(names, t.Name)
 			}
 			return strings.Join(names, ", ")
+		},
+		"toJSON": func(v any) string {
+			b, err := json.MarshalIndent(v, "", "  ")
+			if err != nil {
+				return ""
+			}
+			return string(b)
 		},
 	}).ParseFS(templateFS, "templates/*.html"),
 )

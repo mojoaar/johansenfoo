@@ -1,0 +1,28 @@
+{{define "admin_theme_form"}}{{template "admin_head" .}}
+<form method="post" action="{{if .IsNew}}/admin/themes{{else}}/admin/themes/{{.Theme.ID}}{{end}}">
+  <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+  <section class="card">
+    <h2>Theme</h2>
+    <label for="name">Name</label>
+    <input type="text" id="name" name="name" value="{{.Theme.Name}}" required>
+    <label for="slug">Slug</label>
+    <input type="text" id="slug" name="slug" value="{{.Theme.Slug}}" required>
+    <label for="description">Description</label>
+    <textarea id="description" name="description">{{.Theme.Description}}</textarea>
+  </section>
+  <section class="card">
+    <h2>Tokens (JSON)</h2>
+    <p class="hint">Every theme needs the base tokens in both light and dark. Unknown tokens and values containing <code>; { } &lt; &gt;</code> are rejected.</p>
+    <label for="tokens_base">Base</label>
+    <textarea id="tokens_base" name="tokens_base" rows="10">{{toJSON .Theme.TokensBase}}</textarea>
+    <label for="tokens_light">Light</label>
+    <textarea id="tokens_light" name="tokens_light" rows="14">{{toJSON .Theme.TokensLight}}</textarea>
+    <label for="tokens_dark">Dark</label>
+    <textarea id="tokens_dark" name="tokens_dark" rows="14">{{toJSON .Theme.TokensDark}}</textarea>
+  </section>
+  <div class="actions">
+    <button type="submit">Save theme</button>
+    <a href="/admin/themes"><button type="button" class="secondary">Cancel</button></a>
+  </div>
+</form>
+{{template "admin_foot" .}}{{end}}
