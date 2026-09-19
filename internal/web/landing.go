@@ -43,6 +43,15 @@ func LoadContent(d *sql.DB) (*db.SiteContent, error) {
 		return nil, err
 	}
 
+	pages, err := db.NewPageSeoRepo(d).List()
+	if err != nil {
+		return nil, err
+	}
+	pageSeo := make(map[string]db.PageSeo, len(pages))
+	for _, p := range pages {
+		pageSeo[p.Route] = p
+	}
+
 	return &db.SiteContent{
 		Profile:    *profile,
 		Social:     social,
@@ -50,6 +59,7 @@ func LoadContent(d *sql.DB) (*db.SiteContent, error) {
 		Experience: experience,
 		Skills:     skills,
 		Theme:      *row,
+		PageSeo:    pageSeo,
 		Settings:   settings,
 	}, nil
 }

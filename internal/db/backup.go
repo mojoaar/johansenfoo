@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const SnapshotVersion = 2
+const SnapshotVersion = 3
 
 var secretSettingKeys = map[string]bool{
 	"admin_password_hash": true,
@@ -23,6 +23,7 @@ type Snapshot struct {
 	Skills     []Skill           `json:"skills"`
 	Posts      []Post            `json:"posts"`
 	Tags       []Tag             `json:"tags"`
+	Pages      []PageSeo         `json:"pages"`
 	Settings   map[string]string `json:"settings"`
 }
 
@@ -90,6 +91,13 @@ func Export(d *sql.DB) (*Snapshot, error) {
 	if tags == nil {
 		tags = []Tag{}
 	}
+	pages, err := NewPageSeoRepo(d).List()
+	if err != nil {
+		return nil, err
+	}
+	if pages == nil {
+		pages = []PageSeo{}
+	}
 	return &Snapshot{
 		Version:    SnapshotVersion,
 		ExportedAt: time.Now().UTC().Format(time.RFC3339),
@@ -100,6 +108,7 @@ func Export(d *sql.DB) (*Snapshot, error) {
 		Skills:     skills,
 		Posts:      posts,
 		Tags:       tags,
+		Pages:      pages,
 		Settings:   settings,
 	}, nil
 }
@@ -112,7 +121,7 @@ func Import(d *sql.DB, s *Snapshot) error {
 		return errors.New("snapshot profile name is required")
 	}
 	if s.Social == nil || s.Projects == nil || s.Experience == nil || s.Skills == nil ||
-		s.Posts == nil || s.Tags == nil {
+		s.Posts == nil || s.Tags == nil || s.Pages == nil {
 		return errors.New("snapshot is missing one or more content sections")
 	}
 
@@ -151,6 +160,9 @@ func Import(d *sql.DB, s *Snapshot) error {
 		return err
 	}
 	if _, err := tx.Exec(`DELETE FROM tag`); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM page_seo`); err != nil {
 		return err
 	}
 
@@ -239,6 +251,15 @@ func Import(d *sql.DB, s *Snapshot) error {
 				`INSERT OR IGNORE INTO post_tag (post_id, tag_id) VALUES (?, ?)`, p.ID, id); err != nil {
 				return err
 			}
+		}
+	}
+	for _, pg := range s.Pages {
+		if _, err := tx.Exec(
+			`INSERT INTO page_seo (id, route, title, description, og_image_url, canonical_url, noindex)
+			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			pg.ID, pg.Route, pg.Title, pg.Description, pg.OGImageURL, pg.CanonicalURL, boolToInt(pg.NoIndex),
+		); err != nil {
+			return err
 		}
 	}
 	for k, v := range s.Settings {

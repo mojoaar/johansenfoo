@@ -109,7 +109,7 @@ func TestSchemaHasCoreTables(t *testing.T) {
 	for _, table := range []string{
 		"profile", "social_link", "project", "experience",
 		"skill", "settings", "theme", "session", "schema_migrations",
-		"post", "tag", "post_tag",
+		"post", "tag", "post_tag", "page_seo",
 	} {
 		var name string
 		err := d.QueryRow(

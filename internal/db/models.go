@@ -79,6 +79,16 @@ type Post struct {
 	Tags           []Tag      `json:"tags"`
 }
 
+type PageSeo struct {
+	ID           int64  `json:"id"`
+	Route        string `json:"route"`
+	Title        string `json:"title"`
+	Description  string `json:"description"`
+	OGImageURL   string `json:"og_image_url"`
+	CanonicalURL string `json:"canonical_url"`
+	NoIndex      bool   `json:"noindex"`
+}
+
 type Theme struct {
 	ID          int64
 	Slug        string
@@ -96,5 +106,6 @@ type SiteContent struct {
 	Experience []Experience
 	Skills     []Skill
 	Theme      Theme
+	PageSeo    map[string]PageSeo
 	Settings   map[string]string
 }

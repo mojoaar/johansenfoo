@@ -215,3 +215,40 @@ func TestImportRejectsOldVersion(t *testing.T) {
 		t.Fatal("Import accepted a snapshot with an old version")
 	}
 }
+
+func TestBackupIncludesPageSeo(t *testing.T) {
+	d := seeded(t)
+	if err := NewPageSeoRepo(d).Upsert(&PageSeo{Route: "/posts", Title: "Writing"}); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+	snap, err := Export(d)
+	if err != nil {
+		t.Fatalf("Export: %v", err)
+	}
+	if len(snap.Pages) != 1 {
+		t.Fatalf("pages = %d, want 1", len(snap.Pages))
+	}
+	snap.Pages[0].Title = "Changed"
+	if err := Import(d, snap); err != nil {
+		t.Fatalf("Import: %v", err)
+	}
+	got, err := NewPageSeoRepo(d).Get("/posts")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got.Title != "Changed" {
+		t.Errorf("title = %q, want Changed", got.Title)
+	}
+}
+
+func TestImportRejectsMissingPages(t *testing.T) {
+	d := seeded(t)
+	snap, err := Export(d)
+	if err != nil {
+		t.Fatalf("Export: %v", err)
+	}
+	snap.Pages = nil
+	if err := Import(d, snap); err == nil {
+		t.Fatal("Import accepted a snapshot with no pages section")
+	}
+}
