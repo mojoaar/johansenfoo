@@ -90,14 +90,14 @@ type PageSeo struct {
 }
 
 type Theme struct {
-	ID          int64
-	Slug        string
-	Name        string
-	Description string
-	TokensBase  map[string]string
-	TokensLight map[string]string
-	TokensDark  map[string]string
-	Sort        int
+	ID          int64             `json:"id"`
+	Slug        string            `json:"slug"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	TokensBase  map[string]string `json:"tokens_base"`
+	TokensLight map[string]string `json:"tokens_light"`
+	TokensDark  map[string]string `json:"tokens_dark"`
+	Sort        int               `json:"sort"`
 }
 
 type SiteContent struct {
