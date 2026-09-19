@@ -38,6 +38,7 @@ internal/db/repo_theme.go   theme repository
 internal/db/repo_session.go session repository: Create, Get, Delete, DeleteExpired
 internal/db/repo_post.go    post, tag and post_tag repository
 internal/db/repo_page_seo.go  page_seo per-route overrides
+internal/db/repo_theme.go   theme CRUD with guard rails (base and active protected)
 internal/db/backup.go       whole-content export/import snapshot (includes posts/tags/pages)
 internal/markdown/          goldmark + GFM + Chroma class-based highlighting
 internal/mcp/               MCP server: backend, auth, tools (content, posts, settings)
@@ -68,6 +69,8 @@ internal/web/api_posts.go   public posts REST handlers
 internal/web/api_admin_posts.go admin posts REST handlers
 internal/web/admin_seo.go   admin SEO settings and page overrides
 internal/web/api_admin_seo.go  SEO settings REST handlers
+internal/web/admin_themes.go   admin theme list, token editor and set-active
+internal/web/api_admin_themes.go  theme CRUD REST handlers
 internal/web/admin.go       admin shell and dashboard
 internal/web/admin_profile.go   profile and social-link handlers
 internal/web/admin_projects.go  project CRUD handlers
@@ -115,6 +118,11 @@ variants are reachable via the `_method` override):
   GET  /admin/seo              POST|PUT /admin/seo
                                POST /admin/seo/pages
                                POST|DELETE /admin/seo/pages/{id}/delete
+  GET  /admin/themes           POST /admin/themes
+  GET  /admin/themes/new
+  GET  /admin/themes/{id}      POST|PUT /admin/themes/{id}
+                               POST|DELETE /admin/themes/{id}/delete
+                               POST|PUT /admin/themes/{id}/activate
 Auth routes: GET|POST /setup, GET|POST /login, POST /logout
 ```
 
@@ -132,6 +140,8 @@ API routes:
     POST         /api/v1/admin/posts/{id}/publish   /unpublish
     PUT          /api/v1/admin/settings/posts    PUT /api/v1/admin/settings/theme
     GET|PUT      /api/v1/admin/settings/seo
+    GET|POST     /api/v1/admin/themes            GET|PUT|DELETE /api/v1/admin/themes/{id}
+    POST         /api/v1/admin/themes/{id}/activate
     GET          /api/v1/admin/export            POST /api/v1/admin/import
 ```
 
@@ -155,5 +165,8 @@ API routes:
 - `/mcp` is behind `Authorization: Bearer <api-key>` and a 100 req/min per-IP limiter; it is
   CSRF-exempt. MCP writes call the injected `Reload`, and every tool error uses
   `mcp.NewToolResultError` rather than returning a Go error.
+- Theme writes run through `theme.Validate` before touching the DB; values containing `; { } < >`
+  or unknown token names are rejected, and the `johansen` base theme and the active theme cannot be
+  deleted.
 - Documentation is part of the definition of done: a new feature updates the README feature list, a
   new package updates the architecture trees here and in the README, and changed routes update both.

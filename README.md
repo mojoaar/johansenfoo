@@ -143,6 +143,19 @@ snake_case and errors are returned as MCP tool errors.
 
 Themes (Phase 6) and stats (Phase 7) tools are not available yet.
 
+## Themes
+
+The active theme is a site-wide setting (no visitor picker); visitors keep the light/dark toggle.
+Every theme supplies a base token set plus light and dark overrides, and the base theme fills any
+gap. The active theme is emitted as an inline `<style>` block, so there is no extra request.
+
+Themes are edited at `/admin/themes` (or over `GET|POST /api/v1/admin/themes`,
+`GET|PUT|DELETE /api/v1/admin/themes/{id}`, `POST /api/v1/admin/themes/{id}/activate`). The token
+vocabulary covers colour pairs (`--card`, `--primary`, `--muted-foreground`, `--destructive`,
+`--ring`, …), typography, shape/depth and code-highlighting tokens. Unknown token names and values
+containing `; { } < >` are rejected, so a theme can never break out of the inline `<style>`.
+The `johansen` base theme and the currently active theme cannot be deleted.
+
 ## Build and run
 
 Requires Go 1.25 and is CGO-free.
@@ -168,6 +181,7 @@ internal/db/migrations/   append-only schema, seed and theme migrations
 internal/db/backup.go     whole-content export/import snapshot
 internal/db/repo_post.go  post, tag and post_tag repository
 internal/db/repo_page_seo.go  page_seo per-route overrides
+internal/db/repo_theme.go  theme CRUD with guard rails
 internal/markdown/        goldmark + GFM + Chroma highlighting, sanitised
 internal/mcp/             MCP streamable-HTTP server, auth, rate limiting and tools
 internal/theme/           token vocabulary, defaults, validation, CSS emission
