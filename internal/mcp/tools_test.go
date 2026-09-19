@@ -308,3 +308,99 @@ func TestUpdatePostNormalizesSlug(t *testing.T) {
 		t.Fatalf("slug = %q, want my-post", updated.Slug)
 	}
 }
+
+func johansenTokens(t *testing.T, b Backend) (map[string]string, map[string]string) {
+	t.Helper()
+	base, err := db.NewThemeRepo(b.DB).GetBySlug("johansen")
+	if err != nil {
+		t.Fatalf("GetBySlug: %v", err)
+	}
+	return base.TokensLight, base.TokensDark
+}
+
+func TestThemeToolLifecycle(t *testing.T) {
+	b, reloads := testBackend(t)
+	light, dark := johansenTokens(t, b)
+
+	created := decode[db.Theme](t, callTool(t, b.createTheme, map[string]any{
+		"slug": "mcp-theme", "name": "MCP Theme", "tokens_light": light, "tokens_dark": dark,
+	}))
+	if created.ID == 0 {
+		t.Fatal("create_theme returned no id")
+	}
+
+	list := decode[[]db.Theme](t, callTool(t, b.listThemes, nil))
+	if !themeInList(list, "mcp-theme") {
+		t.Error("created theme not listed")
+	}
+
+	updated := decode[db.Theme](t, callTool(t, b.updateTheme, map[string]any{"slug": "mcp-theme", "name": "MCP Theme Two"}))
+	if updated.Name != "MCP Theme Two" {
+		t.Errorf("name = %q", updated.Name)
+	}
+
+	got := decode[db.Theme](t, callTool(t, b.getTheme, map[string]any{"slug": "mcp-theme"}))
+	if got.Slug != "mcp-theme" {
+		t.Errorf("get_theme = %+v", got)
+	}
+
+	callTool(t, b.setActiveTheme, map[string]any{"slug": "mcp-theme"})
+	if slug, _ := db.NewThemeRepo(b.DB).ActiveSlug(); slug != "mcp-theme" {
+		t.Errorf("active = %q", slug)
+	}
+	callTool(t, b.setActiveTheme, map[string]any{"slug": "johansen"})
+
+	callTool(t, b.deleteTheme, map[string]any{"slug": "mcp-theme"})
+	list = decode[[]db.Theme](t, callTool(t, b.listThemes, nil))
+	if themeInList(list, "mcp-theme") {
+		t.Error("theme still listed after delete")
+	}
+	if *reloads == 0 {
+		t.Error("theme tools never reloaded")
+	}
+}
+
+func themeInList(themes []db.Theme, slug string) bool {
+	for _, th := range themes {
+		if th.Slug == slug {
+			return true
+		}
+	}
+	return false
+}
+
+func TestThemeToolGuardRails(t *testing.T) {
+	b, _ := testBackend(t)
+	if res := callTool(t, b.deleteTheme, map[string]any{"slug": "johansen"}); !res.IsError {
+		t.Error("deleting johansen did not error")
+	}
+	if res := callTool(t, b.setActiveTheme, map[string]any{"slug": "missing"}); !res.IsError {
+		t.Error("setting a missing theme did not error")
+	}
+	light, dark := johansenTokens(t, b)
+	res := callTool(t, b.createTheme, map[string]any{
+		"slug": "evil", "name": "Evil", "tokens_light": light, "tokens_dark": dark,
+	})
+	if res.IsError {
+		t.Fatal("control create failed")
+	}
+	if res := callTool(t, b.createTheme, map[string]any{
+		"slug": "evil2", "name": "Evil2", "tokens_light": light,
+		"tokens_dark": map[string]any{"--accent": "</style>"},
+	}); !res.IsError {
+		t.Error("breaking token value did not error")
+	}
+}
+
+func TestThemeToolImportCatppuccin(t *testing.T) {
+	b, _ := testBackend(t)
+	created := decode[db.Theme](t, callTool(t, b.importTheme, map[string]any{
+		"name": "Imported Mocha", "slug": "imported-mocha", "flavour": "mocha",
+	}))
+	if created.Slug != "imported-mocha" || created.TokensDark["--accent"] == "" {
+		t.Fatalf("imported = %+v", created)
+	}
+	if res := callTool(t, b.importTheme, map[string]any{"name": "Nope", "flavour": "vanilla"}); !res.IsError {
+		t.Error("unknown flavour did not error")
+	}
+}
