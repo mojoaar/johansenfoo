@@ -5,6 +5,7 @@ import (
 	"embed"
 	"html/template"
 	"net/http"
+	"strings"
 
 	"github.com/mojoaar/johansenfoo/internal/db"
 	"github.com/mojoaar/johansenfoo/internal/icons"
@@ -56,6 +57,13 @@ var templates = template.Must(
 	template.New("").Funcs(template.FuncMap{
 		"icon": func(name, class string) template.HTML {
 			return icons.Inline(name, class)
+		},
+		"tagNames": func(tags []db.Tag) string {
+			names := make([]string, 0, len(tags))
+			for _, t := range tags {
+				names = append(names, t.Name)
+			}
+			return strings.Join(names, ", ")
 		},
 	}).ParseFS(templateFS, "templates/*.html"),
 )

@@ -1,0 +1,46 @@
+{{define "admin_post_form"}}{{template "admin_head" .}}
+<form method="post" action="{{if .IsNew}}/admin/posts{{else}}/admin/posts/{{.Post.ID}}{{end}}">
+  <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+  <section class="card">
+    <h2>Post</h2>
+    <label for="title">Title</label>
+    <input type="text" id="title" name="title" value="{{.Post.Title}}" required>
+    <label for="slug">Slug</label>
+    <input type="text" id="slug" name="slug" value="{{.Post.Slug}}">
+    <label for="summary">Summary</label>
+    <textarea id="summary" name="summary">{{.Post.Summary}}</textarea>
+    <label for="body_md">Body (markdown)</label>
+    <textarea id="body_md" name="body_md" rows="18">{{.Post.BodyMD}}</textarea>
+    <label for="tags">Tags (comma separated)</label>
+    <input type="text" id="tags" name="tags" value="{{tagNames .Post.Tags}}">
+    <label for="status">Status</label>
+    <select id="status" name="status">
+      <option value="draft"{{if eq .Post.Status "draft"}} selected{{end}}>Draft</option>
+      <option value="published"{{if eq .Post.Status "published"}} selected{{end}}>Published</option>
+    </select>
+  </section>
+  <section class="card">
+    <h2>Hero image</h2>
+    <label for="hero_image_url">Hero image URL</label>
+    <input type="text" id="hero_image_url" name="hero_image_url" value="{{.Post.HeroImageURL}}">
+    <label for="hero_image_alt">Hero image alt</label>
+    <input type="text" id="hero_image_alt" name="hero_image_alt" value="{{.Post.HeroImageAlt}}">
+  </section>
+  <section class="card">
+    <h2>SEO</h2>
+    <label for="seo_title">SEO title</label>
+    <input type="text" id="seo_title" name="seo_title" value="{{.Post.SEOTitle}}">
+    <label for="seo_description">SEO description</label>
+    <textarea id="seo_description" name="seo_description">{{.Post.SEODescription}}</textarea>
+    <label for="og_image_url">OG image URL</label>
+    <input type="text" id="og_image_url" name="og_image_url" value="{{.Post.OGImageURL}}">
+    <label for="canonical_url">Canonical URL</label>
+    <input type="text" id="canonical_url" name="canonical_url" value="{{.Post.CanonicalURL}}">
+    <label class="check"><input type="checkbox" name="noindex" value="1"{{if .Post.NoIndex}} checked{{end}}> No index</label>
+  </section>
+  <div class="actions">
+    <button type="submit">Save post</button>
+    <a href="/admin/posts"><button type="button" class="secondary">Cancel</button></a>
+  </div>
+</form>
+{{template "admin_foot" .}}{{end}}
