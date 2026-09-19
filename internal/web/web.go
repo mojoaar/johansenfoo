@@ -3,6 +3,7 @@ package web
 import (
 	"database/sql"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -111,6 +112,7 @@ func New(d Deps) http.Handler {
 			apiAdmin.Post("/themes/{id}/activate", apiAdminThemesActivateHandler(d))
 			apiAdmin.Get("/stats/visitors", apiAdminStatsVisitorsHandler(d))
 			apiAdmin.Delete("/stats/visitors", apiAdminStatsClearHandler(d))
+			apiAdmin.Get("/stats/system", apiAdminStatsSystemHandler(d))
 			apiAdmin.Put("/settings/stats", apiAdminStatsSettingsPutHandler(d))
 			apiAdmin.Get("/export", apiAdminExportHandler(d))
 			apiAdmin.Post("/import", apiAdminImportHandler(d))
@@ -200,6 +202,8 @@ func New(d Deps) http.Handler {
 		DB:      d.DB,
 		Reload:  d.Content.Reload,
 		Version: d.Version,
+		Started: d.Started,
+		DataDir: filepath.Dir(d.Cfg.DBPath),
 		APIKey: func() (string, error) {
 			return db.NewSettingsRepo(d.DB).Get(apiKeySettingKey)
 		},

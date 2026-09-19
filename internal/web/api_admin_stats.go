@@ -109,3 +109,9 @@ func adminStatsPostHandler(d Deps) http.HandlerFunc {
 		http.Redirect(w, r, "/admin?saved=1", http.StatusSeeOther)
 	}
 }
+
+func apiAdminStatsSystemHandler(d Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, collectRuntime(d))
+	}
+}

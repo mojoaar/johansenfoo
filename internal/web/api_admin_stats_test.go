@@ -143,3 +143,27 @@ func TestAPIAdminStatsSettingsPut(t *testing.T) {
 		t.Errorf("retention = %q", v)
 	}
 }
+
+func TestAPIAdminStatsSystemRequiresAuth(t *testing.T) {
+	h := newTestHandler(t)
+	if rec := apiDo(t, h, http.MethodGet, "/api/v1/admin/stats/system", "", nil); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", rec.Code)
+	}
+}
+
+func TestAPIAdminStatsSystem(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := loggedInHandler(t, d, store)
+	rec := apiDo(t, h, http.MethodGet, "/api/v1/admin/stats/system", "", withSession)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body=%s", rec.Code, rec.Body.String())
+	}
+	got := decodeBody[struct {
+		Goroutines    int   `json:"goroutines"`
+		UptimeSeconds int64 `json:"uptime_seconds"`
+	}](t, rec)
+	if got.Goroutines <= 0 {
+		t.Errorf("goroutines = %d, want > 0", got.Goroutines)
+	}
+}

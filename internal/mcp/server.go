@@ -24,7 +24,12 @@ func NewServer(b Backend, version string) *server.MCPServer {
 }
 
 func Handler(d Deps) http.Handler {
-	stream := server.NewStreamableHTTPServer(NewServer(Backend{DB: d.DB, Reload: d.Reload}, d.Version))
+	stream := server.NewStreamableHTTPServer(NewServer(Backend{
+		DB:      d.DB,
+		Reload:  d.Reload,
+		Started: d.Started,
+		DataDir: d.DataDir,
+	}, d.Version))
 	limiter := newLimiter(rateLimitMax, rateLimitWindow)
 	go func() {
 		for range time.Tick(time.Minute) {

@@ -2,12 +2,14 @@ package mcp
 
 import (
 	"context"
+	"runtime"
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 
 	"github.com/mojoaar/johansenfoo/internal/db"
+	"github.com/mojoaar/johansenfoo/internal/sysinfo"
 )
 
 func statPeriodDays(period string) int {
@@ -85,4 +87,32 @@ func registerStatTools(s *server.MCPServer, b Backend) {
 	s.AddTool(mcp.NewTool("clear_visitor_stats",
 		mcp.WithDescription("Delete every recorded page view."),
 	), b.clearVisitorStats)
+	s.AddTool(mcp.NewTool("get_system_stats",
+		mcp.WithDescription("Return Go process figures and, on Linux containers, CPU/memory/disk usage."),
+	), b.getSystemStats)
+}
+
+func (b Backend) getSystemStats(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	dataDir := b.DataDir
+	if dataDir == "" {
+		dataDir = "."
+	}
+	container, _ := sysinfo.Read(dataDir)
+
+	return jsonResult(map[string]any{
+		"uptime_seconds":            int64(time.Since(b.Started).Seconds()),
+		"goroutines":                runtime.NumGoroutine(),
+		"heap_alloc":                m.HeapAlloc,
+		"heap_sys":                  m.HeapSys,
+		"gc_count":                  m.NumGC,
+		"cpu_percent":               container.CPUPercent,
+		"mem_used":                  container.MemUsed,
+		"mem_limit":                 container.MemLimit,
+		"disk_used":                 container.DiskUsed,
+		"disk_total":                container.DiskTotal,
+		"container_stats_available": container.Available,
+	}, nil)
 }

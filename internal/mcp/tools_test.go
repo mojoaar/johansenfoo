@@ -468,3 +468,15 @@ func TestVisitorStatsTools(t *testing.T) {
 		t.Errorf("views = %d after clear, want 0", n)
 	}
 }
+
+func TestSystemStatsTool(t *testing.T) {
+	b, _ := testBackend(t)
+	b.Started = time.Now().Add(-time.Minute)
+	got := decode[map[string]any](t, callTool(t, b.getSystemStats, nil))
+	if got["goroutines"].(float64) <= 0 {
+		t.Fatalf("goroutines = %v, want > 0", got["goroutines"])
+	}
+	if got["uptime_seconds"].(float64) < 0 {
+		t.Errorf("uptime = %v", got["uptime_seconds"])
+	}
+}

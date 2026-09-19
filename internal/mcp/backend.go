@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 )
@@ -13,11 +14,15 @@ type Deps struct {
 	Reload  func() error
 	APIKey  func() (string, error)
 	Version string
+	Started time.Time
+	DataDir string
 }
 
 type Backend struct {
-	DB     *sql.DB
-	Reload func() error
+	DB      *sql.DB
+	Reload  func() error
+	Started time.Time
+	DataDir string
 }
 
 func (b Backend) reload() error {
