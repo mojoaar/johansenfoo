@@ -51,6 +51,8 @@ type page struct {
 	Tags           []db.Tag
 	Tag            db.Tag
 	PostsEnabled   bool
+	Settings       map[string]string
+	PageSeoList    []db.PageSeo
 }
 
 var templates = template.Must(

@@ -1,0 +1,65 @@
+{{define "admin_seo"}}{{template "admin_head" .}}
+<form method="post" action="/admin/seo">
+  <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+  <section class="card">
+    <h2>Global defaults</h2>
+    <label for="site_title">Site title</label>
+    <input type="text" id="site_title" name="site_title" value="{{.Settings.site_title}}">
+    <label for="title_template">Title template (%s)</label>
+    <input type="text" id="title_template" name="title_template" value="{{.Settings.title_template}}">
+    <label for="seo_description">Default meta description</label>
+    <textarea id="seo_description" name="seo_description">{{.Settings.seo_description}}</textarea>
+    <label for="og_image_url">Default OG image URL</label>
+    <input type="text" id="og_image_url" name="og_image_url" value="{{.Settings.og_image_url}}">
+    <label for="og_type">OG type</label>
+    <input type="text" id="og_type" name="og_type" value="{{.Settings.og_type}}">
+    <label for="twitter_card">Twitter card</label>
+    <input type="text" id="twitter_card" name="twitter_card" value="{{.Settings.twitter_card}}">
+    <label for="twitter_site">Twitter site</label>
+    <input type="text" id="twitter_site" name="twitter_site" value="{{.Settings.twitter_site}}">
+    <label for="canonical_base_url">Canonical base URL</label>
+    <input type="text" id="canonical_base_url" name="canonical_base_url" value="{{.Settings.canonical_base_url}}">
+    <label class="check"><input type="checkbox" name="noindex" value="1"{{if eq .Settings.noindex "true"}} checked{{end}}> Site-wide noindex</label>
+    <label class="check"><input type="checkbox" name="sitemap_enabled" value="1"{{if ne .Settings.sitemap_enabled "false"}} checked{{end}}> Sitemap enabled</label>
+    <label for="robots_txt">robots.txt</label>
+    <textarea id="robots_txt" name="robots_txt" rows="6">{{.Settings.robots_txt}}</textarea>
+  </section>
+  <div class="actions"><button type="submit">Save SEO settings</button></div>
+</form>
+
+<section class="card">
+  <h2>Per-page overrides</h2>
+  <table class="admin-table">
+    <thead><tr><th>Route</th><th>Title</th><th>Noindex</th><th></th></tr></thead>
+    <tbody>
+      {{range .PageSeoList}}
+      <tr>
+        <td>{{.Route}}</td>
+        <td>{{.Title}}</td>
+        <td>{{.NoIndex}}</td>
+        <td class="row-actions">
+          <form method="post" action="/admin/seo/pages/{{.ID}}/delete"><input type="hidden" name="csrf_token" value="{{$.CSRF}}"><button class="link" type="submit">Delete</button></form>
+        </td>
+      </tr>
+      {{else}}
+      <tr><td colspan="4">No overrides.</td></tr>
+      {{end}}
+    </tbody>
+  </table>
+  <form method="post" action="/admin/seo/pages">
+    <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+    <label for="route">Route</label>
+    <input type="text" id="route" name="route" placeholder="/posts">
+    <label for="page_title">Title</label>
+    <input type="text" id="page_title" name="title">
+    <label for="page_description">Description</label>
+    <textarea id="page_description" name="description"></textarea>
+    <label for="page_og">OG image URL</label>
+    <input type="text" id="page_og" name="og_image_url">
+    <label for="page_canonical">Canonical URL</label>
+    <input type="text" id="page_canonical" name="canonical_url">
+    <label class="check"><input type="checkbox" name="noindex" value="1"> Noindex</label>
+    <div class="actions"><button type="submit">Add / update override</button></div>
+  </form>
+</section>
+{{template "admin_foot" .}}{{end}}
