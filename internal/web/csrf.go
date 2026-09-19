@@ -31,6 +31,9 @@ func csrfExempt(r *http.Request) bool {
 	if strings.EqualFold(r.Header.Get("HX-Request"), "true") {
 		return true
 	}
+	if strings.HasPrefix(r.URL.Path, "/api/") {
+		return true
+	}
 	switch r.URL.Path {
 	case "/login", "/setup":
 		return true

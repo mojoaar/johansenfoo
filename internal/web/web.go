@@ -49,6 +49,12 @@ func New(d Deps) http.Handler {
 		api.Get("/experience", apiExperienceHandler(d))
 		api.Get("/skills", apiSkillsHandler(d))
 		api.Get("/theme", apiThemeHandler(d))
+
+		api.Route("/admin", func(apiAdmin chi.Router) {
+			apiAdmin.Use(apiAuthMiddleware(d))
+			apiAdmin.Get("/profile", apiAdminProfileGetHandler(d))
+			apiAdmin.Put("/profile", apiAdminProfilePutHandler(d))
+		})
 	})
 
 	r.Get("/setup", setupHandler(d))
