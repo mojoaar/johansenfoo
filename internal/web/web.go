@@ -79,6 +79,10 @@ func New(d Deps) http.Handler {
 				r.Put("/{id}", apiCRUDHandler(d, skillCRUD(d), "skill"))
 				r.Delete("/{id}", apiCRUDHandler(d, skillCRUD(d), "skill"))
 			})
+			apiAdmin.Put("/settings/posts", apiAdminPostsSettingHandler(d))
+			apiAdmin.Put("/settings/theme", apiAdminThemeSettingHandler(d))
+			apiAdmin.Get("/export", apiAdminExportHandler(d))
+			apiAdmin.Post("/import", apiAdminImportHandler(d))
 		})
 	})
 
