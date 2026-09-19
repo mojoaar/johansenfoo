@@ -1,5 +1,7 @@
 package db
 
+import "time"
+
 type Profile struct {
 	Name       string `json:"name"`
 	Handle     string `json:"handle"`
@@ -49,6 +51,32 @@ type Skill struct {
 	Name    string `json:"name"`
 	Sort    int    `json:"sort"`
 	Visible bool   `json:"visible"`
+}
+
+type Tag struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	Slug string `json:"slug"`
+}
+
+type Post struct {
+	ID             int64      `json:"id"`
+	Slug           string     `json:"slug"`
+	Title          string     `json:"title"`
+	Summary        string     `json:"summary"`
+	BodyMD         string     `json:"body_md"`
+	Status         string     `json:"status"`
+	PublishedAt    *time.Time `json:"published_at"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+	HeroImageURL   string     `json:"hero_image_url"`
+	HeroImageAlt   string     `json:"hero_image_alt"`
+	SEOTitle       string     `json:"seo_title"`
+	SEODescription string     `json:"seo_description"`
+	OGImageURL     string     `json:"og_image_url"`
+	CanonicalURL   string     `json:"canonical_url"`
+	NoIndex        bool       `json:"noindex"`
+	Tags           []Tag      `json:"tags"`
 }
 
 type Theme struct {
