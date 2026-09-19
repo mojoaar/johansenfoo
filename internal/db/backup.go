@@ -21,7 +21,16 @@ type Snapshot struct {
 	Projects   []Project         `json:"projects"`
 	Experience []Experience      `json:"experience"`
 	Skills     []Skill           `json:"skills"`
+	Posts      []Post            `json:"posts"`
+	Tags       []Tag             `json:"tags"`
 	Settings   map[string]string `json:"settings"`
+}
+
+func rfc3339OrNow(t time.Time) string {
+	if t.IsZero() {
+		return time.Now().UTC().Format(time.RFC3339)
+	}
+	return t.UTC().Format(time.RFC3339)
 }
 
 func Export(d *sql.DB) (*Snapshot, error) {
@@ -67,6 +76,20 @@ func Export(d *sql.DB) (*Snapshot, error) {
 	if skills == nil {
 		skills = []Skill{}
 	}
+	posts, err := NewPostRepo(d).All()
+	if err != nil {
+		return nil, err
+	}
+	tags, err := NewPostRepo(d).Tags()
+	if err != nil {
+		return nil, err
+	}
+	if posts == nil {
+		posts = []Post{}
+	}
+	if tags == nil {
+		tags = []Tag{}
+	}
 	return &Snapshot{
 		Version:    SnapshotVersion,
 		ExportedAt: time.Now().UTC().Format(time.RFC3339),
@@ -75,6 +98,8 @@ func Export(d *sql.DB) (*Snapshot, error) {
 		Projects:   projects,
 		Experience: experience,
 		Skills:     skills,
+		Posts:      posts,
+		Tags:       tags,
 		Settings:   settings,
 	}, nil
 }
@@ -86,7 +111,8 @@ func Import(d *sql.DB, s *Snapshot) error {
 	if s.Profile.Name == "" {
 		return errors.New("snapshot profile name is required")
 	}
-	if s.Social == nil || s.Projects == nil || s.Experience == nil || s.Skills == nil {
+	if s.Social == nil || s.Projects == nil || s.Experience == nil || s.Skills == nil ||
+		s.Posts == nil || s.Tags == nil {
 		return errors.New("snapshot is missing one or more content sections")
 	}
 
@@ -116,6 +142,15 @@ func Import(d *sql.DB, s *Snapshot) error {
 		return err
 	}
 	if _, err := tx.Exec(`DELETE FROM skill`); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM post_tag`); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM post`); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM tag`); err != nil {
 		return err
 	}
 
@@ -163,6 +198,47 @@ func Import(d *sql.DB, s *Snapshot) error {
 			sk.ID, sk.Name, sk.Sort, boolToInt(sk.Visible),
 		); err != nil {
 			return err
+		}
+	}
+	for _, tg := range s.Tags {
+		if _, err := tx.Exec(
+			`INSERT INTO tag (id, name, slug) VALUES (?, ?, ?)`,
+			tg.ID, tg.Name, tg.Slug,
+		); err != nil {
+			return err
+		}
+	}
+	tagID := make(map[string]int64, len(s.Tags))
+	for _, tg := range s.Tags {
+		tagID[tg.Slug] = tg.ID
+	}
+	for _, p := range s.Posts {
+		var published any
+		if p.PublishedAt != nil {
+			published = p.PublishedAt.UTC().Format(time.RFC3339)
+		}
+		if _, err := tx.Exec(`INSERT INTO post
+			(id, slug, title, summary, body_md, status, published_at, created_at, updated_at,
+			 hero_image_url, hero_image_alt, seo_title, seo_description, og_image_url, canonical_url, noindex)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			p.ID, p.Slug, p.Title, p.Summary, p.BodyMD, p.Status, published,
+			rfc3339OrNow(p.CreatedAt), rfc3339OrNow(p.UpdatedAt),
+			p.HeroImageURL, p.HeroImageAlt, p.SEOTitle, p.SEODescription, p.OGImageURL,
+			p.CanonicalURL, boolToInt(p.NoIndex)); err != nil {
+			return err
+		}
+		for _, tg := range p.Tags {
+			id := tg.ID
+			if id == 0 {
+				id = tagID[tg.Slug]
+			}
+			if id == 0 {
+				continue
+			}
+			if _, err := tx.Exec(
+				`INSERT OR IGNORE INTO post_tag (post_id, tag_id) VALUES (?, ?)`, p.ID, id); err != nil {
+				return err
+			}
 		}
 	}
 	for k, v := range s.Settings {

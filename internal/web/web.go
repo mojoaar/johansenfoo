@@ -54,6 +54,8 @@ func New(d Deps) http.Handler {
 		api.Get("/experience", apiExperienceHandler(d))
 		api.Get("/skills", apiSkillsHandler(d))
 		api.Get("/theme", apiThemeHandler(d))
+		api.Get("/posts", apiPostsHandler(d))
+		api.Get("/posts/{slug}", apiPostHandler(d))
 
 		api.Route("/admin", func(apiAdmin chi.Router) {
 			apiAdmin.Use(apiAuthMiddleware(d))
@@ -83,6 +85,15 @@ func New(d Deps) http.Handler {
 				r.Get("/{id}", apiCRUDHandler(d, skillCRUD(d), "skill"))
 				r.Put("/{id}", apiCRUDHandler(d, skillCRUD(d), "skill"))
 				r.Delete("/{id}", apiCRUDHandler(d, skillCRUD(d), "skill"))
+			})
+			apiAdmin.Route("/posts", func(r chi.Router) {
+				r.Get("/", apiAdminPostsListHandler(d))
+				r.Post("/", apiAdminPostsCreateHandler(d))
+				r.Get("/{id}", apiAdminPostsGetHandler(d))
+				r.Put("/{id}", apiAdminPostsUpdateHandler(d))
+				r.Delete("/{id}", apiAdminPostsDeleteHandler(d))
+				r.Post("/{id}/publish", apiAdminPostsStatusHandler(d, "published"))
+				r.Post("/{id}/unpublish", apiAdminPostsStatusHandler(d, "draft"))
 			})
 			apiAdmin.Put("/settings/posts", apiAdminPostsSettingHandler(d))
 			apiAdmin.Put("/settings/theme", apiAdminThemeSettingHandler(d))

@@ -2,6 +2,7 @@ package db
 
 import (
 	"testing"
+	"time"
 )
 
 func TestExportOmitsSecrets(t *testing.T) {
@@ -165,5 +166,40 @@ func TestImportIgnoresSecrets(t *testing.T) {
 	hash, err := settings.Get("admin_password_hash")
 	if err != nil || hash != "keep-hash" {
 		t.Errorf("admin_password_hash = %q, err=%v; want keep-hash", hash, err)
+	}
+}
+
+func TestBackupIncludesPosts(t *testing.T) {
+	d := seeded(t)
+	repo := NewPostRepo(d)
+	when := time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
+	if _, err := repo.Create(&Post{
+		Slug: "p", Title: "P", BodyMD: "b", Status: "published", PublishedAt: &when,
+		Tags: []Tag{{Name: "go", Slug: "go"}},
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	snap, err := Export(d)
+	if err != nil {
+		t.Fatalf("Export: %v", err)
+	}
+	if len(snap.Posts) != 1 || len(snap.Tags) != 1 {
+		t.Fatalf("snapshot posts=%d tags=%d, want 1/1", len(snap.Posts), len(snap.Tags))
+	}
+
+	snap.Posts[0].Title = "Changed"
+	if err := Import(d, snap); err != nil {
+		t.Fatalf("Import: %v", err)
+	}
+	got, err := repo.PublishedBySlug("p")
+	if err != nil {
+		t.Fatalf("PublishedBySlug: %v", err)
+	}
+	if got.Title != "Changed" {
+		t.Errorf("title = %q, want Changed", got.Title)
+	}
+	if len(got.Tags) != 1 || got.Tags[0].Slug != "go" {
+		t.Errorf("tags = %+v", got.Tags)
 	}
 }
