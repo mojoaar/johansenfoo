@@ -54,6 +54,10 @@ func New(d Deps) http.Handler {
 			apiAdmin.Use(apiAuthMiddleware(d))
 			apiAdmin.Get("/profile", apiAdminProfileGetHandler(d))
 			apiAdmin.Put("/profile", apiAdminProfilePutHandler(d))
+			apiAdmin.Get("/social", apiAdminSocialListHandler(d))
+			apiAdmin.Post("/social", apiAdminSocialCreateHandler(d))
+			apiAdmin.Put("/social/{id}", apiAdminSocialUpdateHandler(d))
+			apiAdmin.Delete("/social/{id}", apiAdminSocialDeleteHandler(d))
 		})
 	})
 
