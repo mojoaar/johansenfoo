@@ -30,13 +30,13 @@ func Handler(d Deps) http.Handler {
 		}
 	}()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !limiter.allow(clientIP(r)) {
+			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
+			return
+		}
 		key, err := d.APIKey()
 		if err != nil || !bearerAuthorized(r, key) {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
-			return
-		}
-		if !limiter.allow(clientIP(r)) {
-			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
 			return
 		}
 		stream.ServeHTTP(w, r)

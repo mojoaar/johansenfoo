@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -108,5 +109,52 @@ func TestMCPNoKeyConfigured(t *testing.T) {
 	})
 	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("status = %d, want 401 when no key is configured", rec.Code)
+	}
+}
+
+func TestMCPUnauthenticatedTrafficRateLimited(t *testing.T) {
+	oldMax, oldWindow := rateLimitMax, rateLimitWindow
+	rateLimitMax, rateLimitWindow = 2, time.Minute
+	t.Cleanup(func() { rateLimitMax, rateLimitWindow = oldMax, oldWindow })
+
+	h := Handler(testDeps(t, "secret"))
+	for i := 0; i < 2; i++ {
+		if rec := initializeRequest(t, h, nil); rec.Code != http.StatusUnauthorized {
+			t.Fatalf("request %d status = %d, want 401", i+1, rec.Code)
+		}
+	}
+	if rec := initializeRequest(t, h, nil); rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("status = %d, want 429 for unauthenticated flood", rec.Code)
+	}
+}
+
+func TestMCPToolInventoryAndSchemas(t *testing.T) {
+	s := NewServer(Backend{}, "test")
+	tools := s.ListTools()
+	if len(tools) != 28 {
+		t.Fatalf("tools = %d, want 28", len(tools))
+	}
+	seo, ok := tools["update_seo_settings"]
+	if !ok {
+		t.Fatal("update_seo_settings not registered")
+	}
+	body, err := json.Marshal(seo.Tool)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if !strings.Contains(string(body), `"pages"`) {
+		t.Error("update_seo_settings does not declare pages")
+	}
+}
+
+func TestLimiterSweepReclaims(t *testing.T) {
+	l := newLimiter(5, 10*time.Millisecond)
+	if !l.allow("x") {
+		t.Fatal("first allow rejected")
+	}
+	time.Sleep(15 * time.Millisecond)
+	l.sweep()
+	if n := len(l.entries); n != 0 {
+		t.Fatalf("entries = %d, want 0 after sweep", n)
 	}
 }

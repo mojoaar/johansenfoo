@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -271,5 +272,39 @@ func TestImportContentRejectsMalformed(t *testing.T) {
 	res := callTool(t, b.importContent, map[string]any{"snapshot": map[string]any{"version": 999}})
 	if !res.IsError {
 		t.Fatal("expected a tool error for an unsupported snapshot")
+	}
+}
+
+func TestMalformedIDIsToolError(t *testing.T) {
+	b, _ := testBackend(t)
+	for _, args := range []map[string]any{{"id": float64(0)}, {"id": "abc"}} {
+		res := callTool(t, b.deleteProject, args)
+		if !res.IsError {
+			t.Errorf("args %v did not produce a tool error", args)
+		}
+	}
+}
+
+func TestExportContentOmitsSecrets(t *testing.T) {
+	b, _ := testBackend(t)
+	settings := db.NewSettingsRepo(b.DB)
+	if err := settings.Set("api_key", "super-secret"); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	if err := settings.Set("admin_password_hash", "bcrypt-hash"); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	body := resultText(t, callTool(t, b.exportContent, nil))
+	if strings.Contains(body, "super-secret") || strings.Contains(body, "bcrypt-hash") {
+		t.Error("export_content leaked a secret")
+	}
+}
+
+func TestUpdatePostNormalizesSlug(t *testing.T) {
+	b, _ := testBackend(t)
+	created := decode[db.Post](t, callTool(t, b.createPost, map[string]any{"title": "Slug Test", "status": "published"}))
+	updated := decode[db.Post](t, callTool(t, b.updatePost, map[string]any{"id": float64(created.ID), "slug": "My Post!"}))
+	if updated.Slug != "my-post" {
+		t.Fatalf("slug = %q, want my-post", updated.Slug)
 	}
 }

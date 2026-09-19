@@ -137,6 +137,7 @@ func registerSettingTools(s *server.MCPServer, b Backend) {
 		mcp.WithString("og_image_url"), mcp.WithString("og_type"), mcp.WithString("twitter_card"),
 		mcp.WithString("twitter_site"), mcp.WithString("canonical_base_url"), mcp.WithString("robots_txt"),
 		mcp.WithBoolean("noindex"), mcp.WithBoolean("sitemap_enabled"),
+		mcp.WithArray("pages", mcp.Description("Replace the whole set of per-route overrides.")),
 	), b.updateSeoSettings)
 	s.AddTool(mcp.NewTool("enable_posts",
 		mcp.WithDescription("Turn the public posts surface back on."),

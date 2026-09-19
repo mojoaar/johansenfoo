@@ -127,7 +127,9 @@ func (b Backend) updatePost(ctx context.Context, req mcp.CallToolRequest) (*mcp.
 		return mcp.NewToolResultError("post not found"), nil
 	}
 	mergeString(&p.Title, req, "title")
-	mergeString(&p.Slug, req, "slug")
+	if hasArg(req, "slug") {
+		p.Slug = db.Slugify(argString(req, "slug"))
+	}
 	mergeString(&p.Summary, req, "summary")
 	mergeString(&p.BodyMD, req, "body_md")
 	mergeString(&p.HeroImageURL, req, "hero_image_url")
