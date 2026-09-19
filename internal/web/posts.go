@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -64,6 +65,26 @@ func totalPages(total int) int {
 		return 1
 	}
 	return (total + postsPerPage - 1) / postsPerPage
+}
+
+func withPage(base string, n int) string {
+	sep := "?"
+	if strings.Contains(base, "?") {
+		sep = "&"
+	}
+	return base + sep + "page=" + strconv.Itoa(n)
+}
+
+func paginationURLs(base string, pageNum, total int) (string, string) {
+	last := totalPages(total)
+	var prev, next string
+	if pageNum > 1 {
+		prev = withPage(base, pageNum-1)
+	}
+	if pageNum < last {
+		next = withPage(base, pageNum+1)
+	}
+	return prev, next
 }
 
 func newPostPage(d Deps, title, route string) page {
@@ -129,7 +150,61 @@ func postIndexHandler(d Deps) http.HandlerFunc {
 		data.Posts = views
 		data.PageNum = pageNum
 		data.TotalPages = totalPages(total)
+		base := "/posts"
+		if tagSlug != "" {
+			base = "/posts?tag=" + tagSlug
+		}
+		data.PrevURL, data.NextURL = paginationURLs(base, pageNum, total)
 		renderPage(w, "posts", data)
+	}
+}
+
+func tagArchiveHandler(d Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c := d.Content.Current()
+		if c == nil {
+			http.Error(w, "content unavailable", http.StatusInternalServerError)
+			return
+		}
+		if !postsEnabled(c) {
+			http.NotFound(w, r)
+			return
+		}
+		slug := chi.URLParam(r, "slug")
+		repo := db.NewPostRepo(d.DB)
+		tag, err := repo.TagBySlug(slug)
+		if errors.Is(err, db.ErrTagNotFound) {
+			http.NotFound(w, r)
+			return
+		}
+		if err != nil {
+			http.Error(w, "storage error", http.StatusInternalServerError)
+			return
+		}
+		pageNum := pageParam(r)
+		offset := (pageNum - 1) * postsPerPage
+		total, err := repo.CountByTag(slug)
+		if err != nil {
+			http.Error(w, "storage error", http.StatusInternalServerError)
+			return
+		}
+		posts, err := repo.ByTag(slug, postsPerPage, offset)
+		if err != nil {
+			http.Error(w, "storage error", http.StatusInternalServerError)
+			return
+		}
+		loc := siteLocation(c)
+		views := make([]postView, 0, len(posts))
+		for _, p := range posts {
+			views = append(views, toView(p, loc))
+		}
+		data := newPostPage(d, "Posts tagged "+tag.Name, "/tags/"+tag.Slug)
+		data.Tag = *tag
+		data.Posts = views
+		data.PageNum = pageNum
+		data.TotalPages = totalPages(total)
+		data.PrevURL, data.NextURL = paginationURLs("/tags/"+tag.Slug, pageNum, total)
+		renderPage(w, "tag", data)
 	}
 }
 

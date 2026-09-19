@@ -1,8 +1,4 @@
-{{define "posts"}}{{template "public_head" .}}
-{{template "post_nav" .}}
-        <main class="posts-main container">
-            <p class="section-label">// posts</p>
-            <h1 class="section-title">Writing</h1>
+{{define "post_list"}}
             {{if .Posts}}
             <ul class="post-list">
                 {{range .Posts}}
@@ -19,11 +15,19 @@
             {{end}}
             {{if gt .TotalPages 1}}
             <nav class="pagination" aria-label="Pagination">
-                {{if gt .PageNum 1}}<a href="/posts?page={{dec .PageNum}}">Previous</a>{{end}}
+                {{if .PrevURL}}<a href="{{.PrevURL}}">Previous</a>{{end}}
                 <span>Page {{.PageNum}} of {{.TotalPages}}</span>
-                {{if lt .PageNum .TotalPages}}<a href="/posts?page={{inc .PageNum}}">Next</a>{{end}}
+                {{if .NextURL}}<a href="{{.NextURL}}">Next</a>{{end}}
             </nav>
             {{end}}
+{{end}}
+
+{{define "posts"}}{{template "public_head" .}}
+{{template "post_nav" .}}
+        <main class="posts-main container">
+            <p class="section-label">// posts</p>
+            <h1 class="section-title">Writing</h1>
+            {{template "post_list" .}}
         </main>
 {{template "post_scripts" .}}
 {{template "public_foot" .}}{{end}}

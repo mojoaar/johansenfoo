@@ -45,6 +45,8 @@ type page struct {
 	PostBody       template.HTML
 	PageNum        int
 	TotalPages     int
+	PrevURL        string
+	NextURL        string
 	Tags           []db.Tag
 	Tag            db.Tag
 	PostsEnabled   bool
@@ -55,8 +57,6 @@ var templates = template.Must(
 		"icon": func(name, class string) template.HTML {
 			return icons.Inline(name, class)
 		},
-		"inc": func(n int) int { return n + 1 },
-		"dec": func(n int) int { return n - 1 },
 	}).ParseFS(templateFS, "templates/*.html"),
 )
 

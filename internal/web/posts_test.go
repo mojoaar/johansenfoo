@@ -111,3 +111,66 @@ func TestNavShowsPostsWhenEnabledAndHidesWhenDisabled(t *testing.T) {
 		t.Error("posts nav link still shown when posts_enabled=false")
 	}
 }
+
+func TestTagArchiveListsOnlyThatTag(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newTestHandlerWith(t, d, store)
+	repo := db.NewPostRepo(d)
+	publishPost(t, repo, "Go Post", "go-post", "published", "body", []string{"go"})
+	publishPost(t, repo, "Life Post", "life-post", "published", "body", []string{"life"})
+
+	rec := apiDo(t, h, http.MethodGet, "/tags/go", "", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Go Post") {
+		t.Error("tag archive missing matching post")
+	}
+	if strings.Contains(body, "Life Post") {
+		t.Error("tag archive leaked a post with a different tag")
+	}
+}
+
+func TestUnknownTagIs404(t *testing.T) {
+	h := newTestHandler(t)
+	rec := apiDo(t, h, http.MethodGet, "/tags/nope", "", nil)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want 404", rec.Code)
+	}
+}
+
+func TestPostsIndexFiltersByTag(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newTestHandlerWith(t, d, store)
+	repo := db.NewPostRepo(d)
+	publishPost(t, repo, "Go Post", "go-post", "published", "body", []string{"go"})
+	publishPost(t, repo, "Life Post", "life-post", "published", "body", []string{"life"})
+
+	rec := apiDo(t, h, http.MethodGet, "/posts?tag=go", "", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Go Post") || strings.Contains(body, "Life Post") {
+		t.Errorf("tag filter wrong: %s", body)
+	}
+}
+
+func TestTagChipsLinkToArchive(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newTestHandlerWith(t, d, store)
+	publishPost(t, db.NewPostRepo(d), "Go Post", "go-post", "published", "body", []string{"go"})
+
+	rec := apiDo(t, h, http.MethodGet, "/posts", "", nil)
+	if !strings.Contains(rec.Body.String(), `href="/tags/go"`) {
+		t.Error("post index tag chip does not link to the tag archive")
+	}
+	rec = apiDo(t, h, http.MethodGet, "/posts/go-post", "", nil)
+	if !strings.Contains(rec.Body.String(), `href="/tags/go"`) {
+		t.Error("single post tag chip does not link to the tag archive")
+	}
+}

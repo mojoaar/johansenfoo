@@ -45,6 +45,7 @@ func New(d Deps) http.Handler {
 
 	r.Get("/posts", postIndexHandler(d))
 	r.Get("/posts/{slug}", postHandler(d))
+	r.Get("/tags/{slug}", tagArchiveHandler(d))
 
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Get("/profile", apiProfileHandler(d))

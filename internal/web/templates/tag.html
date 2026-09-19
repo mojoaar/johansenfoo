@@ -1,0 +1,9 @@
+{{define "tag"}}{{template "public_head" .}}
+{{template "post_nav" .}}
+        <main class="posts-main container">
+            <p class="section-label">// tag</p>
+            <h1 class="section-title">Posts tagged &ldquo;{{.Tag.Name}}&rdquo;</h1>
+            {{template "post_list" .}}
+        </main>
+{{template "post_scripts" .}}
+{{template "public_foot" .}}{{end}}
