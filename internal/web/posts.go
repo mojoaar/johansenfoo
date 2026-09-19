@@ -87,20 +87,19 @@ func paginationURLs(base string, pageNum, total int) (string, string) {
 	return prev, next
 }
 
-func newPostPage(d Deps, title, route string) page {
+func newPostPage(d Deps, route string, ov metaOverride) page {
 	c := d.Content.Current()
+	meta := resolveMeta(c, route, ov)
 	p := page{
-		Title:          title,
+		Title:          meta.Title,
 		PostsEnabled:   postsEnabled(c),
 		StructuredData: personSchema(c),
 		Profile:        c.Profile,
 		Social:         visibleSocial(c.Social),
 		ThemeSlug:      c.Theme.Slug,
 		ThemeCSS:       template.CSS(theme.CSS(themeFromRow(c.Theme))),
+		Meta:           meta,
 	}
-	meta := resolveMeta(c, route)
-	meta.Title = title
-	p.Meta = meta
 	return p
 }
 
@@ -146,7 +145,7 @@ func postIndexHandler(d Deps) http.HandlerFunc {
 		for _, p := range posts {
 			views = append(views, toView(p, loc))
 		}
-		data := newPostPage(d, "Posts", "/posts")
+		data := newPostPage(d, "/posts", metaOverride{title: "Posts"})
 		data.Posts = views
 		data.PageNum = pageNum
 		data.TotalPages = totalPages(total)
@@ -198,7 +197,7 @@ func tagArchiveHandler(d Deps) http.HandlerFunc {
 		for _, p := range posts {
 			views = append(views, toView(p, loc))
 		}
-		data := newPostPage(d, "Posts tagged "+tag.Name, "/tags/"+tag.Slug)
+		data := newPostPage(d, "/tags/"+tag.Slug, metaOverride{title: "Posts tagged " + tag.Name})
 		data.Tag = *tag
 		data.Posts = views
 		data.PageNum = pageNum
@@ -229,7 +228,13 @@ func postHandler(d Deps) http.HandlerFunc {
 			http.Error(w, "storage error", http.StatusInternalServerError)
 			return
 		}
-		data := newPostPage(d, post.Title, "/posts/"+post.Slug)
+		data := newPostPage(d, "/posts/"+post.Slug, metaOverride{
+			title:       firstNonEmpty(post.SEOTitle, post.Title),
+			description: firstNonEmpty(post.SEODescription, post.Summary),
+			image:       firstNonEmpty(post.OGImageURL, post.HeroImageURL),
+			canonical:   post.CanonicalURL,
+			noindex:     post.NoIndex,
+		})
 		data.Post = toView(*post, siteLocation(c))
 		data.PostBody = markdown.Render(post.BodyMD)
 		renderPage(w, "post", data)

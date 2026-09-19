@@ -27,6 +27,7 @@
         <meta property="og:site_name" content="johansen.foo" />
 
         <meta name="twitter:card" content="{{.Meta.TwitterCard}}" />
+        {{if .Meta.TwitterSite}}<meta name="twitter:site" content="{{.Meta.TwitterSite}}" />{{end}}
         <meta name="twitter:title" content="{{.Meta.Title}}" />
         <meta name="twitter:description" content="{{.Meta.Description}}" />
         <meta name="twitter:image" content="{{.Meta.OGImage}}" />

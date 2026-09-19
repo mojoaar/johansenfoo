@@ -83,7 +83,7 @@ func landingHandler(d Deps) http.HandlerFunc {
 			return
 		}
 		themeCSS := theme.CSS(themeFromRow(c.Theme))
-		meta := resolveMeta(c, "/")
+		meta := resolveMeta(c, "/", metaOverride{})
 		data := newPage(c, themeCSS, meta, personSchema(c))
 		data.PostsEnabled = postsEnabled(c)
 		renderPage(w, "landing", data)

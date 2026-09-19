@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"net/http"
+	"strings"
 
 	"github.com/mojoaar/johansenfoo/internal/db"
 )
@@ -17,34 +18,72 @@ type Meta struct {
 	OGType      string
 	OGImage     string
 	TwitterCard string
+	TwitterSite string
 	ThemeColor  string
+}
+
+type metaOverride struct {
+	title       string
+	description string
+	image       string
+	canonical   string
+	noindex     bool
 }
 
 const defaultDescription = "Morten Johansen - Building and running complex infrastructure & cloud environments for 18+ years."
 
-func resolveMeta(c *db.SiteContent, route string) Meta {
-	s := c.Settings
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
 
-	title := s["site_title"]
+func applyTitleTemplate(tmpl, title string) string {
+	if tmpl == "" || !strings.Contains(tmpl, "%s") {
+		return title
+	}
+	return strings.Replace(tmpl, "%s", title, 1)
+}
+
+func resolveMeta(c *db.SiteContent, route string, ov metaOverride) Meta {
+	s := c.Settings
+	page := c.PageSeo[route]
+
+	title := page.Title
+	if title == "" {
+		if ov.title != "" {
+			title = applyTitleTemplate(s["title_template"], ov.title)
+		} else {
+			title = s["site_title"]
+		}
+	}
 	if title == "" {
 		title = "Morten Johansen | johansen.foo"
 	}
-	description := s["seo_description"]
-	if description == "" {
-		description = defaultDescription
-	}
+
+	description := firstNonEmpty(page.Description, ov.description, s["seo_description"], defaultDescription)
+	image := firstNonEmpty(page.OGImageURL, ov.image, s["og_image_url"])
+
 	base := s["canonical_base_url"]
 	if base == "" {
 		base = "https://johansen.foo"
 	}
-	robots := "index, follow"
-	if s["noindex"] == "true" {
-		robots = "noindex, nofollow"
+	canonical := firstNonEmpty(page.CanonicalURL, ov.canonical)
+	if canonical == "" {
+		if route == "" || route == "/" {
+			canonical = base + "/"
+		} else {
+			canonical = base + route
+		}
 	}
 
-	canonical := base + "/"
-	if route != "/" {
-		canonical = base + route
+	noindex := page.NoIndex || ov.noindex || s["noindex"] == "true"
+	robots := "index, follow"
+	if noindex {
+		robots = "noindex, nofollow"
 	}
 
 	ogType := s["og_type"]
@@ -62,8 +101,9 @@ func resolveMeta(c *db.SiteContent, route string) Meta {
 		Canonical:   canonical,
 		Robots:      robots,
 		OGType:      ogType,
-		OGImage:     s["og_image_url"],
+		OGImage:     image,
 		TwitterCard: card,
+		TwitterSite: s["twitter_site"],
 		ThemeColor:  themeColor(c),
 	}
 }
