@@ -40,6 +40,7 @@ internal/db/repo_post.go    post, tag and post_tag repository
 internal/db/repo_page_seo.go  page_seo per-route overrides
 internal/db/backup.go       whole-content export/import snapshot (includes posts/tags/pages)
 internal/markdown/          goldmark + GFM + Chroma class-based highlighting
+internal/mcp/               MCP server: backend, auth, tools (content, posts, settings)
 internal/theme/             token vocabulary, defaults, validation, CSS emission
 internal/icons/             vendored SVGs, exposed to templates as inline SVG
 internal/web/               chi router, middleware, handlers and the content snapshot
@@ -80,6 +81,7 @@ internal/web/static/        embedded style.css, admin.css, fonts, htmx, favicons
 Public routes: `GET /`, `GET /me`, `GET /robots.txt`, `GET /sitemap.xml`, `GET /health`,
 `GET /posts`, `GET /posts/{slug}`, `GET /tags/{slug}`, `GET /feed.xml`,
 `GET|POST /setup`, `GET|POST /login`, `POST /logout`.
+Authenticated transport: `/mcp` (MCP streamable HTTP, Bearer API key).
 
 Admin routes (all behind authMiddleware; the templates post plain forms, and the PUT/DELETE
 variants are reachable via the `_method` override):
@@ -150,5 +152,8 @@ API routes:
   noindex flag is the OR of site, `page_seo` and post. All SEO fields live in `settings` or
   `page_seo` and are read from the cached snapshot, never queried per request.
 - `/api/` paths are CSRF-exempt; API write safety rests on Bearer/JSON rather than a form token.
+- `/mcp` is behind `Authorization: Bearer <api-key>` and a 100 req/min per-IP limiter; it is
+  CSRF-exempt. MCP writes call the injected `Reload`, and every tool error uses
+  `mcp.NewToolResultError` rather than returning a Go error.
 - Documentation is part of the definition of done: a new feature updates the README feature list, a
   new package updates the architecture trees here and in the README, and changed routes update both.

@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- MCP server at `/mcp` (streamable HTTP) with API-key auth and a 100 req/min per-IP limit, and 28
+  tools covering profile, projects, experience, skills, posts, tags, the posts kill switch, SEO
+  settings, and content export/import.
 - SEO: metadata resolved with per-page (`page_seo`) and per-post overrides over admin-editable
   global defaults; title template, Twitter site, three-source `noindex`, and `BlogPosting`
   structured data on every published post.

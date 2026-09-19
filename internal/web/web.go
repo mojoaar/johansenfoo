@@ -9,6 +9,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/mojoaar/johansenfoo/internal/config"
+	"github.com/mojoaar/johansenfoo/internal/db"
+	"github.com/mojoaar/johansenfoo/internal/mcp"
 )
 
 type Deps struct {
@@ -170,6 +172,17 @@ func New(d Deps) http.Handler {
 	})
 
 	startSessionPruner(d.DB, time.Hour)
+
+	mcpHandler := mcp.Handler(mcp.Deps{
+		DB:      d.DB,
+		Reload:  d.Content.Reload,
+		Version: d.Version,
+		APIKey: func() (string, error) {
+			return db.NewSettingsRepo(d.DB).Get(apiKeySettingKey)
+		},
+	})
+	r.Handle("/mcp", mcpHandler)
+	r.Handle("/mcp/*", mcpHandler)
 
 	return r
 }

@@ -123,6 +123,26 @@ beats the global SEO defaults, which beat the hardcoded fallback. All of it is e
   and `noindex`; its description defaults to the summary and its OG image to the hero image.
 - Every published post also emits `BlogPosting` structured data; the home page emits `Person`.
 
+## MCP
+
+The same content is exposed over MCP streamable HTTP at `/mcp`, authenticated with the API key
+(`Authorization: Bearer <api-key>`) and limited to 100 requests per minute per IP. Tool names are
+snake_case and errors are returned as MCP tool errors.
+
+```
+  Profile     get_profile, update_profile
+  Projects    list_projects, create_project, update_project, delete_project
+  Experience  list_experience, create_experience, update_experience, delete_experience
+  Skills      list_skills, create_skill, update_skill, delete_skill
+  Posts       list_posts, get_post, create_post, update_post, delete_post,
+              publish_post, unpublish_post, list_tags
+  Posts flag  enable_posts, disable_posts
+  SEO         get_seo_settings, update_seo_settings
+  Content     export_content, import_content
+```
+
+Themes (Phase 6) and stats (Phase 7) tools are not available yet.
+
 ## Build and run
 
 Requires Go 1.25 and is CGO-free.
@@ -149,6 +169,7 @@ internal/db/backup.go     whole-content export/import snapshot
 internal/db/repo_post.go  post, tag and post_tag repository
 internal/db/repo_page_seo.go  page_seo per-route overrides
 internal/markdown/        goldmark + GFM + Chroma highlighting, sanitised
+internal/mcp/             MCP streamable-HTTP server, auth, rate limiting and tools
 internal/theme/           token vocabulary, defaults, validation, CSS emission
 internal/icons/           vendored SVGs exposed to templates as inline SVG
 internal/web/             chi router, handlers, auth, CSRF, content snapshot
