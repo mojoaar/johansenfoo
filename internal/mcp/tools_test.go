@@ -147,3 +147,69 @@ func TestExperienceAndSkillTools(t *testing.T) {
 	}
 	callTool(t, b.deleteSkill, map[string]any{"id": float64(skill.ID)})
 }
+
+func findPost(posts []db.Post, id int64) bool {
+	for _, p := range posts {
+		if p.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func TestPostToolsLifecycle(t *testing.T) {
+	b, reloads := testBackend(t)
+	created := decode[db.Post](t, callTool(t, b.createPost, map[string]any{
+		"title": "MCP Post", "slug": "mcp-post", "summary": "s", "body_md": "# hi",
+		"status": "published", "tags": "go, testing",
+	}))
+	if created.ID == 0 || created.PublishedAt == nil {
+		t.Fatalf("created = %+v", created)
+	}
+	if len(created.Tags) != 2 {
+		t.Fatalf("tags = %+v", created.Tags)
+	}
+
+	if posts := decode[[]db.Post](t, callTool(t, b.listPosts, nil)); !findPost(posts, created.ID) {
+		t.Error("published post not listed")
+	}
+	if tags := decode[[]db.Tag](t, callTool(t, b.listTags, nil)); len(tags) != 2 {
+		t.Errorf("tags = %+v", tags)
+	}
+
+	got := decode[db.Post](t, callTool(t, b.getPost, map[string]any{"slug": "mcp-post"}))
+	if got.Title != "MCP Post" {
+		t.Errorf("get_post = %+v", got)
+	}
+
+	updated := decode[db.Post](t, callTool(t, b.updatePost, map[string]any{"id": float64(created.ID), "title": "MCP Post Two"}))
+	if updated.Title != "MCP Post Two" || updated.BodyMD != "# hi" {
+		t.Fatalf("updated = %+v", updated)
+	}
+
+	callTool(t, b.unpublishPost, map[string]any{"id": float64(created.ID)})
+	if posts := decode[[]db.Post](t, callTool(t, b.listPosts, nil)); findPost(posts, created.ID) {
+		t.Error("unpublished post still listed")
+	}
+	if posts := decode[[]db.Post](t, callTool(t, b.listPosts, map[string]any{"include_drafts": true})); !findPost(posts, created.ID) {
+		t.Error("draft not listed with include_drafts")
+	}
+
+	callTool(t, b.publishPost, map[string]any{"id": float64(created.ID)})
+	callTool(t, b.deletePost, map[string]any{"id": float64(created.ID)})
+	if posts := decode[[]db.Post](t, callTool(t, b.listPosts, map[string]any{"include_drafts": true})); findPost(posts, created.ID) {
+		t.Error("post still listed after delete")
+	}
+	if *reloads != 5 {
+		t.Errorf("reloads = %d, want 5", *reloads)
+	}
+}
+
+func TestPostDuplicateSlugIsToolError(t *testing.T) {
+	b, _ := testBackend(t)
+	callTool(t, b.createPost, map[string]any{"title": "One", "slug": "dup", "status": "draft"})
+	res := callTool(t, b.createPost, map[string]any{"title": "Two", "slug": "dup", "status": "draft"})
+	if !res.IsError {
+		t.Fatal("expected a tool error for a duplicate slug")
+	}
+}

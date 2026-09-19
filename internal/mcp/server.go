@@ -16,6 +16,7 @@ func NewServer(b Backend, version string) *server.MCPServer {
 		server.WithRecovery(),
 	)
 	registerContentTools(s, b)
+	registerPostTools(s, b)
 	return s
 }
 
