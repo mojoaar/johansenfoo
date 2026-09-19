@@ -39,10 +39,11 @@ internal/db/repo_session.go session repository: Create, Get, Delete, DeleteExpir
 internal/db/repo_post.go    post, tag and post_tag repository
 internal/db/repo_page_seo.go  page_seo per-route overrides
 internal/db/repo_theme.go   theme CRUD with guard rails (base and active protected)
+internal/db/seed_themes.go  insert-if-missing theme library seeding
 internal/db/backup.go       whole-content export/import snapshot (includes posts/tags/pages)
 internal/markdown/          goldmark + GFM + Chroma class-based highlighting
-internal/mcp/               MCP server: backend, auth, tools (content, posts, settings)
-internal/theme/             token vocabulary, defaults, validation, CSS emission
+internal/mcp/               MCP server: backend, auth, tools (content, posts, settings, themes)
+internal/theme/             token vocabulary, validation, CSS emission, seed library
 internal/icons/             vendored SVGs, exposed to templates as inline SVG
 internal/web/               chi router, middleware, handlers and the content snapshot
 internal/web/content.go     ContentStore: cached SiteContent snapshot with Reload
@@ -167,6 +168,7 @@ API routes:
   `mcp.NewToolResultError` rather than returning a Go error.
 - Theme writes run through `theme.Validate` before touching the DB; values containing `; { } < >`
   or unknown token names are rejected, and the `johansen` base theme and the active theme cannot be
-  deleted.
+  deleted. The theme library is seeded at startup with insert-if-missing, so an edited seed theme is
+  never overwritten.
 - Documentation is part of the definition of done: a new feature updates the README feature list, a
   new package updates the architecture trees here and in the README, and changed routes update both.

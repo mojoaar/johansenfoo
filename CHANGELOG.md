@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Theme library seeded at startup: Catppuccin Latte/Frappé/Macchiato/Mocha (via `catppuccin/go`)
+  plus Nord, Rosé Pine, Tokyo Night, Gruvbox, Everforest and Solarized; seeding is insert-only.
+- MCP theme tools `list_themes`, `get_theme`, `create_theme`, `update_theme`, `delete_theme`,
+  `set_active_theme` and `import_theme`.
 - Themes: a widened token vocabulary (colour pairs, typography, shape/depth, code tokens), hardened
   validation that rejects CSS/HTML-breaking values, full theme CRUD with guard rails, an admin
   token editor at `/admin/themes`, and `GET|POST|GET|PUT|DELETE /api/v1/admin/themes` plus activate.

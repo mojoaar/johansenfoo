@@ -138,10 +138,12 @@ snake_case and errors are returned as MCP tool errors.
               publish_post, unpublish_post, list_tags
   Posts flag  enable_posts, disable_posts
   SEO         get_seo_settings, update_seo_settings
+  Themes      list_themes, get_theme, create_theme, update_theme, delete_theme,
+              set_active_theme, import_theme
   Content     export_content, import_content
 ```
 
-Themes (Phase 6) and stats (Phase 7) tools are not available yet.
+Stats (Phase 7) tools are not available yet.
 
 ## Themes
 
@@ -155,6 +157,11 @@ vocabulary covers colour pairs (`--card`, `--primary`, `--muted-foreground`, `--
 `--ring`, …), typography, shape/depth and code-highlighting tokens. Unknown token names and values
 containing `; { } < >` are rejected, so a theme can never break out of the inline `<style>`.
 The `johansen` base theme and the currently active theme cannot be deleted.
+
+The site seeds a theme library at startup (insert-only, so edits are never overwritten):
+Catppuccin Latte, Frappé, Macchiato and Mocha (via `github.com/catppuccin/go`), plus Nord, Rosé
+Pine, Tokyo Night, Gruvbox, Everforest and Solarized. New themes can also be imported over MCP with
+`import_theme` (`flavour: "mocha"` or explicit token maps).
 
 ## Build and run
 
@@ -184,7 +191,7 @@ internal/db/repo_page_seo.go  page_seo per-route overrides
 internal/db/repo_theme.go  theme CRUD with guard rails
 internal/markdown/        goldmark + GFM + Chroma highlighting, sanitised
 internal/mcp/             MCP streamable-HTTP server, auth, rate limiting and tools
-internal/theme/           token vocabulary, defaults, validation, CSS emission
+internal/theme/           token vocabulary, defaults, validation, CSS emission, seed library
 internal/icons/           vendored SVGs exposed to templates as inline SVG
 internal/web/             chi router, handlers, auth, CSRF, content snapshot
 internal/web/api_*.go     /api/v1 public reads and authenticated admin REST handlers
