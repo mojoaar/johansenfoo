@@ -40,3 +40,18 @@ func TestReadDegradesWithoutError(t *testing.T) {
 		t.Errorf("unavailable stats must be zeroed: %+v", st)
 	}
 }
+
+func TestAvailableHelper(t *testing.T) {
+	if !statsAvailable(true, false, false) {
+		t.Error("one successful read should be available")
+	}
+	if statsAvailable(false, false, false) {
+		t.Error("no successful read should be unavailable")
+	}
+}
+
+func TestCPUPercentSubMicrosecondWall(t *testing.T) {
+	if got := cpuPercent(1000, 500*time.Nanosecond); got != 0 {
+		t.Errorf("cpuPercent = %v, want 0 for a sub-microsecond window", got)
+	}
+}

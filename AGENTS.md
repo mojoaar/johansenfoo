@@ -90,7 +90,7 @@ internal/web/static/        embedded style.css, admin.css, fonts, htmx, favicons
 
 Public routes: `GET /`, `GET /me`, `GET /robots.txt`, `GET /sitemap.xml`, `GET /health`,
 `GET /posts`, `GET /posts/{slug}`, `GET /tags/{slug}`, `GET /feed.xml`,
-`GET|POST /setup`, `GET|POST /login`, `POST /logout`.
+`GET|POST /setup`, `GET|POST /login`, `POST /logout`, `GET /metrics`.
 Authenticated transport: `/mcp` (MCP streamable HTTP, Bearer API key).
 
 Admin routes (all behind authMiddleware; the templates post plain forms, and the PUT/DELETE

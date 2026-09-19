@@ -480,3 +480,11 @@ func TestSystemStatsTool(t *testing.T) {
 		t.Errorf("uptime = %v", got["uptime_seconds"])
 	}
 }
+
+func TestSystemStatsZeroStarted(t *testing.T) {
+	b, _ := testBackend(t)
+	got := decode[map[string]any](t, callTool(t, b.getSystemStats, nil))
+	if got["uptime_seconds"].(float64) != 0 {
+		t.Errorf("uptime = %v, want 0 with a zero Started", got["uptime_seconds"])
+	}
+}

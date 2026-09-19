@@ -213,12 +213,14 @@ internal/db/repo_page_seo.go  page_seo per-route overrides
 internal/db/repo_theme.go  theme CRUD with guard rails
 internal/markdown/        goldmark + GFM + Chroma highlighting, sanitised
 internal/mcp/             MCP streamable-HTTP server, auth, rate limiting and tools
+internal/sysinfo/         cgroup/proc/Statfs runtime stats (unavailable off Linux)
 internal/theme/           token vocabulary, defaults, validation, CSS emission, seed library
 internal/icons/           vendored SVGs exposed to templates as inline SVG
 internal/web/             chi router, handlers, auth, CSRF, content snapshot
 internal/web/api_*.go     /api/v1 public reads and authenticated admin REST handlers
 internal/web/posts.go     public post index, single post, tag archive
 internal/web/feed.go      RSS 2.0 feed
+internal/web/runtime.go   /metrics, runtime snapshot and the /admin/runtime partial
 internal/web/admin_posts.go  admin post CRUD and publish controls
 internal/web/admin_seo.go    admin SEO settings and page overrides
 internal/web/api_admin_seo.go  SEO settings REST handlers

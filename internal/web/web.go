@@ -199,12 +199,16 @@ func New(d Deps) http.Handler {
 	startSessionPruner(d.DB, time.Hour)
 	startStatsPruner(d.DB, 24*time.Hour)
 
+	dataDir := "."
+	if d.Cfg != nil && d.Cfg.DBPath != "" {
+		dataDir = filepath.Dir(d.Cfg.DBPath)
+	}
 	mcpHandler := mcp.Handler(mcp.Deps{
 		DB:      d.DB,
 		Reload:  d.Content.Reload,
 		Version: d.Version,
 		Started: d.Started,
-		DataDir: filepath.Dir(d.Cfg.DBPath),
+		DataDir: dataDir,
 		APIKey: func() (string, error) {
 			return db.NewSettingsRepo(d.DB).Get(apiKeySettingKey)
 		},

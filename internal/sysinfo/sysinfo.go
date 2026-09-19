@@ -34,8 +34,12 @@ func parseCPUmax(s string) (quota, period int64, unlimited bool) {
 	return quota, period, false
 }
 
+func statsAvailable(cpuOK, memOK, diskOK bool) bool {
+	return cpuOK || memOK || diskOK
+}
+
 func cpuPercent(deltaUsec int64, wall time.Duration) float64 {
-	if wall <= 0 || deltaUsec <= 0 {
+	if wall.Microseconds() <= 0 || deltaUsec <= 0 {
 		return 0
 	}
 	return float64(deltaUsec) / float64(wall.Microseconds()) * 100

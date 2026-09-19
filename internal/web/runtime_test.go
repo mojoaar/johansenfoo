@@ -2,6 +2,7 @@ package web
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -78,4 +79,30 @@ func TestDashboardPollsRuntime(t *testing.T) {
 	if !strings.Contains(rec.Body.String(), `hx-get="/admin/runtime"`) {
 		t.Error("dashboard does not poll the runtime partial")
 	}
+}
+
+func TestRuntimePartialHasHeadingAndDiskTotal(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	rec := adminRequest(t, d, store, http.MethodGet, "/admin/runtime", nil)
+	if !strings.Contains(rec.Body.String(), "Runtime") {
+		t.Error("partial is missing the Runtime heading")
+	}
+
+	w := httptest.NewRecorder()
+	renderFragment(w, "admin_runtime", page{Runtime: RuntimeStats{Available: true, DiskUsed: 1, DiskTotal: 2}})
+	if !strings.Contains(w.Body.String(), "disk total") {
+		t.Error("partial is missing disk total when container stats are available")
+	}
+}
+
+func TestNewWithNilCfgDoesNotPanic(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("New panicked with nil Cfg: %v", r)
+		}
+	}()
+	_ = New(Deps{DB: d, Content: store, Version: "test", Started: time.Now()})
 }

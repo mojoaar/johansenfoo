@@ -96,6 +96,11 @@ func (b Backend) getSystemStats(ctx context.Context, req mcp.CallToolRequest) (*
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
+	uptime := int64(0)
+	if !b.Started.IsZero() {
+		uptime = int64(time.Since(b.Started).Seconds())
+	}
+
 	dataDir := b.DataDir
 	if dataDir == "" {
 		dataDir = "."
@@ -103,7 +108,7 @@ func (b Backend) getSystemStats(ctx context.Context, req mcp.CallToolRequest) (*
 	container, _ := sysinfo.Read(dataDir)
 
 	return jsonResult(map[string]any{
-		"uptime_seconds":            int64(time.Since(b.Started).Seconds()),
+		"uptime_seconds":            uptime,
 		"goroutines":                runtime.NumGoroutine(),
 		"heap_alloc":                m.HeapAlloc,
 		"heap_sys":                  m.HeapSys,
