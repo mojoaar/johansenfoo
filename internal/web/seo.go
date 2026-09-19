@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bytes"
 	"encoding/json"
 	"html/template"
 	"net/http"
@@ -143,17 +144,45 @@ func sitemapHandler(d Deps) http.HandlerFunc {
 			http.Error(w, "content unavailable", http.StatusInternalServerError)
 			return
 		}
+		if c.Settings["sitemap_enabled"] == "false" {
+			http.NotFound(w, r)
+			return
+		}
 		base := c.Settings["canonical_base_url"]
 		if base == "" {
 			base = "https://johansen.foo"
 		}
 
+		var buf bytes.Buffer
+		buf.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n")
+		buf.WriteString(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n")
+		writeLoc := func(loc string) {
+			buf.WriteString("  <url>\n    <loc>" + xmlEscape(loc) + "</loc>\n  </url>\n")
+		}
+		writeLoc(base + "/")
+		if postsEnabled(c) {
+			repo := db.NewPostRepo(d.DB)
+			posts, err := repo.Published(1000, 0)
+			if err != nil {
+				http.Error(w, "storage error", http.StatusInternalServerError)
+				return
+			}
+			tags, err := repo.Tags()
+			if err != nil {
+				http.Error(w, "storage error", http.StatusInternalServerError)
+				return
+			}
+			writeLoc(base + "/posts")
+			for _, p := range posts {
+				writeLoc(base + "/posts/" + p.Slug)
+			}
+			for _, t := range tags {
+				writeLoc(base + "/tags/" + t.Slug)
+			}
+		}
+		buf.WriteString("</urlset>\n")
+
 		w.Header().Set("Content-Type", "application/xml; charset=utf-8")
-		_, _ = w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>` + "\n"))
-		_, _ = w.Write([]byte(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n"))
-		_, _ = w.Write([]byte("  <url>\n"))
-		_, _ = w.Write([]byte("    <loc>" + base + "/</loc>\n"))
-		_, _ = w.Write([]byte("  </url>\n"))
-		_, _ = w.Write([]byte("</urlset>\n"))
+		_, _ = w.Write(buf.Bytes())
 	}
 }

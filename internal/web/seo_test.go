@@ -8,6 +8,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/mojoaar/johansenfoo/internal/db"
 )
 
 func TestMeReturnsJSONFromDatabase(t *testing.T) {
@@ -186,8 +188,93 @@ func TestSitemapXML(t *testing.T) {
 	if !strings.Contains(body, "<loc>https://johansen.foo/</loc>") {
 		t.Error("sitemap is missing the home URL")
 	}
-	if strings.Contains(body, "/posts") {
-		t.Error("phase 1 has no posts and the sitemap must not advertise them")
+	if !strings.Contains(body, "<loc>https://johansen.foo/posts</loc>") {
+		t.Error("sitemap is missing the posts index")
+	}
+}
+
+func TestSitemapIncludesPublishedPostsAndExcludesDrafts(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newTestHandlerWith(t, d, store)
+	repo := db.NewPostRepo(d)
+	publishPost(t, repo, "Live", "live-post", "published", "body", []string{"go"})
+	publishPost(t, repo, "Draft", "draft-post", "draft", "body", nil)
+
+	rec := apiDo(t, h, http.MethodGet, "/sitemap.xml", "", nil)
+	body := rec.Body.String()
+	if !strings.Contains(body, "<loc>https://johansen.foo/posts/live-post</loc>") {
+		t.Error("published post missing from sitemap")
+	}
+	if !strings.Contains(body, "<loc>https://johansen.foo/tags/go</loc>") {
+		t.Error("tag archive missing from sitemap")
+	}
+	if strings.Contains(body, "draft-post") {
+		t.Error("draft leaked into sitemap")
+	}
+}
+
+func TestSitemapOmitsPostsWhenDisabled(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newTestHandlerWith(t, d, store)
+	publishPost(t, db.NewPostRepo(d), "Live", "live-post", "published", "body", nil)
+	if err := db.NewSettingsRepo(d).Set("posts_enabled", "false"); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	if err := store.Reload(); err != nil {
+		t.Fatalf("Reload: %v", err)
+	}
+
+	rec := apiDo(t, h, http.MethodGet, "/sitemap.xml", "", nil)
+	body := rec.Body.String()
+	if strings.Contains(body, "live-post") {
+		t.Error("posts still in sitemap while posts_enabled=false")
+	}
+}
+
+func TestSitemapDisabledReturns404(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newTestHandlerWith(t, d, store)
+	if err := db.NewSettingsRepo(d).Set("sitemap_enabled", "false"); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	if err := store.Reload(); err != nil {
+		t.Fatalf("Reload: %v", err)
+	}
+	rec := apiDo(t, h, http.MethodGet, "/sitemap.xml", "", nil)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want 404", rec.Code)
+	}
+}
+
+func TestPostsKillSwitch(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newTestHandlerWith(t, d, store)
+	publishPost(t, db.NewPostRepo(d), "Live", "live-post", "published", "body", []string{"go"})
+	if err := db.NewSettingsRepo(d).Set("posts_enabled", "false"); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	if err := store.Reload(); err != nil {
+		t.Fatalf("Reload: %v", err)
+	}
+
+	for _, path := range []string{"/posts", "/posts/live-post", "/tags/go", "/feed.xml"} {
+		if rec := apiDo(t, h, http.MethodGet, path, "", nil); rec.Code != http.StatusNotFound {
+			t.Errorf("%s status = %d, want 404", path, rec.Code)
+		}
+	}
+
+	if err := db.NewSettingsRepo(d).Set("posts_enabled", "true"); err != nil {
+		t.Fatalf("Set true: %v", err)
+	}
+	if err := store.Reload(); err != nil {
+		t.Fatalf("Reload: %v", err)
+	}
+	if rec := apiDo(t, h, http.MethodGet, "/posts/live-post", "", nil); rec.Code != http.StatusOK {
+		t.Errorf("after re-enable status = %d, want 200", rec.Code)
 	}
 }
 
