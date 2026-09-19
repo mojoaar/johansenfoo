@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/mojoaar/johansenfoo/internal/db"
 )
@@ -154,6 +155,34 @@ func personSchema(c *db.SiteContent) template.HTML {
 		"knowsAbout":  knowsAbout,
 	}
 
+	body, err := json.MarshalIndent(payload, "", "    ")
+	if err != nil {
+		return ""
+	}
+	return template.HTML(`<script type="application/ld+json">` + string(body) + `</script>`)
+}
+
+func blogPostSchema(c *db.SiteContent, p db.Post) template.HTML {
+	base := c.Settings["canonical_base_url"]
+	if base == "" {
+		base = "https://johansen.foo"
+	}
+	published := p.CreatedAt
+	if p.PublishedAt != nil {
+		published = *p.PublishedAt
+	}
+	payload := map[string]any{
+		"@context":      "https://schema.org",
+		"@type":         "BlogPosting",
+		"headline":      p.Title,
+		"description":   firstNonEmpty(p.SEODescription, p.Summary, c.Settings["seo_description"]),
+		"url":           firstNonEmpty(p.CanonicalURL, base+"/posts/"+p.Slug),
+		"image":         firstNonEmpty(p.OGImageURL, p.HeroImageURL, c.Settings["og_image_url"]),
+		"datePublished": published.UTC().Format(time.RFC3339),
+		"dateModified":  p.UpdatedAt.UTC().Format(time.RFC3339),
+		"author":        map[string]string{"@type": "Person", "name": c.Profile.Name},
+		"publisher":     map[string]string{"@type": "Person", "name": c.Profile.Name},
+	}
 	body, err := json.MarshalIndent(payload, "", "    ")
 	if err != nil {
 		return ""

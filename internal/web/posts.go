@@ -237,6 +237,7 @@ func postHandler(d Deps) http.HandlerFunc {
 		})
 		data.Post = toView(*post, siteLocation(c))
 		data.PostBody = markdown.Render(post.BodyMD)
+		data.StructuredData = personSchema(c) + blogPostSchema(c, *post)
 		renderPage(w, "post", data)
 	}
 }

@@ -126,3 +126,29 @@ func TestTwitterSiteRenderedWhenSet(t *testing.T) {
 		t.Error("twitter:site not rendered when set")
 	}
 }
+
+func TestPostPageEmitsBlogPosting(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	h := newTestHandlerWith(t, d, store)
+	createSeoPost(t, db.NewPostRepo(d), &db.Post{
+		Slug: "bp", Title: "Blog Posting Test", Summary: "sum", Status: "published",
+	})
+
+	rec := apiDo(t, h, http.MethodGet, "/posts/bp", "", nil)
+	body := rec.Body.String()
+	if !strings.Contains(body, `"@type": "BlogPosting"`) {
+		t.Error("BlogPosting schema missing")
+	}
+	if !strings.Contains(body, `"headline": "Blog Posting Test"`) {
+		t.Error("BlogPosting headline missing")
+	}
+	if !strings.Contains(body, `"datePublished"`) {
+		t.Error("BlogPosting datePublished missing")
+	}
+
+	rec = apiDo(t, h, http.MethodGet, "/", "", nil)
+	if !strings.Contains(rec.Body.String(), `"@type": "Person"`) {
+		t.Error("Person schema lost from the landing page")
+	}
+}
