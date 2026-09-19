@@ -17,7 +17,7 @@ CGO_ENABLED=0 go run ./cmd/johansenfoo -data=/tmp/jf   # run against a scratch d
 - Module `github.com/mojoaar/johansenfoo`, Go 1.25.5, must build and test with `CGO_ENABLED=0`.
 - No third-party origin on the runtime critical path other than the Umami snippet. HTMX is vendored
   at `/static/htmx.min.js`; no CDN scripts or fonts.
-- Migrations are append-only: `0001`-`0004` stay byte-identical. Add the next free number (`0006`)
+- Migrations are append-only: `0001`-`0005` stay byte-identical. Add the next free number (`0006`)
   only when required.
 - All timestamps are RFC 3339 UTC via `strftime('%Y-%m-%dT%H:%M:%SZ','now')`, never `datetime('now')`.
 - All SQL is parameterized.
@@ -36,6 +36,7 @@ internal/db/repo_content.go project, experience and skill repository
 internal/db/repo_settings.go key/value settings repository
 internal/db/repo_theme.go   theme repository
 internal/db/repo_session.go session repository: Create, Get, Delete, DeleteExpired
+internal/db/backup.go       whole-content export/import snapshot
 internal/markdown/          goldmark wrapper (GFM, sanitised)
 internal/theme/             token vocabulary, defaults, validation, CSS emission
 internal/icons/             vendored SVGs, exposed to templates as inline SVG
@@ -49,6 +50,14 @@ internal/web/render.go      page data, embedded templates, renderPage/renderAdmi
 internal/web/static.go      embedded static assets; directory listings are rejected
 internal/web/auth.go        bcrypt password, sessions, auth middleware, session pruning
 internal/web/csrf.go        CSRF middleware and POST method override
+internal/web/api.go         JSON helpers (writeJSON, writeAPIError, decodeJSON, apiID)
+internal/web/api_public.go  public /api/v1 read handlers
+internal/web/api_auth.go    API session/Bearer authentication middleware
+internal/web/api_admin_profile.go  admin profile REST handlers
+internal/web/api_admin_social.go   admin social-link REST handlers
+internal/web/api_admin_content.go  generic admin REST CRUD for projects/experience/skills
+internal/web/api_admin_settings.go settings REST handlers
+internal/web/api_admin_backup.go   export/import REST handlers
 internal/web/admin.go       admin shell and dashboard
 internal/web/admin_profile.go   profile and social-link handlers
 internal/web/admin_projects.go  project CRUD handlers
@@ -88,12 +97,28 @@ variants are reachable via the `_method` override):
 Auth routes: GET|POST /setup, GET|POST /login, POST /logout
 ```
 
+API routes:
+
+```
+  Public: GET /api/v1/profile|projects|experience|skills|theme
+  Admin (all behind apiAuthMiddleware; Bearer API key or admin session cookie):
+    GET|PUT      /api/v1/admin/profile
+    GET|POST     /api/v1/admin/social            PUT|DELETE /api/v1/admin/social/{id}
+    GET|POST     /api/v1/admin/projects|experience|skills
+    GET|PUT|DELETE /api/v1/admin/projects|experience|skills/{id}
+    PUT          /api/v1/admin/settings/posts    PUT /api/v1/admin/settings/theme
+    GET          /api/v1/admin/export            POST /api/v1/admin/import
+```
+
 ## Behaviour to preserve
 
 - Every successful admin write calls `d.Content.Reload()` so the next public request reflects it.
 - Every non-HTMX admin write form carries a server-rendered hidden `csrf_token`. Requests with
   `HX-Request: true`, GET/HEAD, and POSTs to `/login`, `/setup` and `/mcp` are CSRF-exempt.
 - Repo list methods return every row plus a `Visible` field; visibility is filtered in
-  `render.go` / `me.go` / `seo.go`, never with `WHERE visible = 1`.
+  `render.go` / `me.go` / `seo.go` / `api_public.go`, never with `WHERE visible = 1`.
+- Public `/api/v1` reads filter `Visible`; admin `/api/v1/admin/*` reads return every row.
+- Every successful admin API write calls `d.Content.Reload()`, exactly like the HTML admin handlers.
+- `/api/` paths are CSRF-exempt; API write safety rests on Bearer/JSON rather than a form token.
 - Documentation is part of the definition of done: a new feature updates the README feature list, a
   new package updates the architecture trees here and in the README, and changed routes update both.

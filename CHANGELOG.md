@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Public read API at `/api/v1` for the profile, projects, experience, skills and theme.
+- Authenticated admin REST API at `/api/v1/admin` with CRUD for the profile, social links,
+  projects, experience and skills, plus posts/theme settings.
+- Whole-content export and import at `/api/v1/admin/export` and `/api/v1/admin/import`, with the
+  password hash and API key stripped from exports.
 - Admin surface at `/admin` with bcrypt password setup, login, logout and session cookies.
 - CRUD for the profile, social links, projects, experience and skills.
 - Password change and regenerable API key management at `/admin/security`.
