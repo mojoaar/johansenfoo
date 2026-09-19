@@ -17,7 +17,7 @@ CGO_ENABLED=0 go run ./cmd/johansenfoo -data=/tmp/jf   # run against a scratch d
 - Module `github.com/mojoaar/johansenfoo`, Go 1.25.5, must build and test with `CGO_ENABLED=0`.
 - No third-party origin on the runtime critical path other than the Umami snippet. HTMX is vendored
   at `/static/htmx.min.js`; no CDN scripts or fonts.
-- Migrations are append-only: `0001`-`0007` stay byte-identical. Add the next free number (`0008`)
+- Migrations are append-only: `0001`-`0008` stay byte-identical. Add the next free number (`0009`)
   only when required.
 - All timestamps are RFC 3339 UTC via `strftime('%Y-%m-%dT%H:%M:%SZ','now')`, never `datetime('now')`.
 - All SQL is parameterized.
@@ -40,6 +40,7 @@ internal/db/repo_post.go    post, tag and post_tag repository
 internal/db/repo_page_seo.go  page_seo per-route overrides
 internal/db/repo_theme.go   theme CRUD with guard rails (base and active protected)
 internal/db/seed_themes.go  insert-if-missing theme library seeding
+internal/db/repo_views.go   page_view recording, aggregation and pruning
 internal/db/backup.go       whole-content export/import snapshot (includes posts/tags/pages)
 internal/markdown/          goldmark + GFM + Chroma class-based highlighting
 internal/mcp/               MCP server: backend, auth, tools (content, posts, settings, themes)
@@ -72,6 +73,7 @@ internal/web/admin_seo.go   admin SEO settings and page overrides
 internal/web/api_admin_seo.go  SEO settings REST handlers
 internal/web/admin_themes.go   admin theme list, token editor and set-active
 internal/web/api_admin_themes.go  theme CRUD REST handlers
+internal/web/api_admin_stats.go  visitor stats REST handlers
 internal/web/admin.go       admin shell and dashboard
 internal/web/admin_profile.go   profile and social-link handlers
 internal/web/admin_projects.go  project CRUD handlers
@@ -143,6 +145,7 @@ API routes:
     GET|PUT      /api/v1/admin/settings/seo
     GET|POST     /api/v1/admin/themes            GET|PUT|DELETE /api/v1/admin/themes/{id}
     POST         /api/v1/admin/themes/{id}/activate
+    GET|DELETE   /api/v1/admin/stats/visitors
     GET          /api/v1/admin/export            POST /api/v1/admin/import
 ```
 
@@ -163,6 +166,9 @@ API routes:
   noindex flag is the OR of site, `page_seo` and post. All SEO fields live in `settings` or
   `page_seo` and are read from the cached snapshot, never queried per request.
 - `/api/` paths are CSRF-exempt; API write safety rests on Bearer/JSON rather than a form token.
+- The page_view middleware records only GET 2xx `text/html` responses outside `/admin`, `/static`,
+  `/api`, `/mcp`, `/metrics` and the auth pages. It never stores a raw IP (only a salted SHA-256
+  whose salt rotates daily), sets no cookie, and is disabled by `stats_enabled=false`.
 - `/mcp` is behind `Authorization: Bearer <api-key>` and a 100 req/min per-IP limiter; it is
   CSRF-exempt. MCP writes call the injected `Reload`, and every tool error uses
   `mcp.NewToolResultError` rather than returning a Go error.

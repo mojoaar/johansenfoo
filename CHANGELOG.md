@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Visitor stats: privacy-preserving page-view recording (daily-rotating salted IP hash, no cookies),
+  a daily retention job, dashboard visitor cards, `GET|DELETE /api/v1/admin/stats/visitors`, and the
+  `get_visitor_stats` / `clear_visitor_stats` MCP tools.
 - Theme library seeded at startup: Catppuccin Latte/Frappé/Macchiato/Mocha (via `catppuccin/go`)
   plus Nord, Rosé Pine, Tokyo Night, Gruvbox, Everforest and Solarized; seeding is insert-only.
 - MCP theme tools `list_themes`, `get_theme`, `create_theme`, `update_theme`, `delete_theme`,
@@ -13,9 +16,9 @@ All notable changes to this project are documented here. The format follows
 - Themes: a widened token vocabulary (colour pairs, typography, shape/depth, code tokens), hardened
   validation that rejects CSS/HTML-breaking values, full theme CRUD with guard rails, an admin
   token editor at `/admin/themes`, and `GET|POST|GET|PUT|DELETE /api/v1/admin/themes` plus activate.
-- MCP server at `/mcp` (streamable HTTP) with API-key auth and a 100 req/min per-IP limit, and 35
+- MCP server at `/mcp` (streamable HTTP) with API-key auth and a 100 req/min per-IP limit, and 37
   tools covering profile, projects, experience, skills, posts, tags, the posts kill switch, SEO
-  settings, themes, and content export/import.
+  settings, themes, visitor stats, and content export/import.
 - SEO: metadata resolved with per-page (`page_seo`) and per-post overrides over admin-editable
   global defaults; title template, Twitter site, three-source `noindex`, and `BlogPosting`
   structured data on every published post.

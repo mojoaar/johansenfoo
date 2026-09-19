@@ -140,10 +140,11 @@ snake_case and errors are returned as MCP tool errors.
   SEO         get_seo_settings, update_seo_settings
   Themes      list_themes, get_theme, create_theme, update_theme, delete_theme,
               set_active_theme, import_theme
+  Stats       get_visitor_stats, clear_visitor_stats
   Content     export_content, import_content
 ```
 
-Stats (Phase 7) tools are not available yet.
+Runtime stats (Prometheus/container) and the `get_system_stats` tool are Phase 7b.
 
 ## Themes
 
@@ -162,6 +163,19 @@ The site seeds a theme library at startup (insert-only, so edits are never overw
 Catppuccin Latte, Frappé, Macchiato and Mocha (via `github.com/catppuccin/go`), plus Nord, Rosé
 Pine, Tokyo Night, Gruvbox, Everforest and Solarized. New themes can also be imported over MCP with
 `import_theme` (`flavour: "mocha"` or explicit token maps).
+
+## Privacy and visitor stats
+
+Page views are recorded for public HTML pages only — never for `/admin`, `/static`, `/api`, `/mcp`
+or `/metrics`, and never for JSON or non-2xx responses. No cookies are set, and the visitor's IP is
+never stored: only a salted SHA-256 hash, where the salt rotates daily, so a visitor cannot be
+correlated across days. Because of that, uniqueness is only computable within a day; the 7-day and
+30-day "daily uniques" figures are sums of daily uniques rather than deduplicated visitors.
+
+The admin dashboard shows views today/7d/30d, daily uniques, top pages, top referrers and recent
+hits. A daily job prunes rows older than `stats_retention_days` (default 90), and `stats_enabled`
+turns collection off entirely. `GET|DELETE /api/v1/admin/stats/visitors` and the `get_visitor_stats`
+/ `clear_visitor_stats` MCP tools expose the same data.
 
 ## Build and run
 
