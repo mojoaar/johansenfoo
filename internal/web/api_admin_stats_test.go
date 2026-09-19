@@ -1,0 +1,99 @@
+package web
+
+import (
+	"net/http"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/mojoaar/johansenfoo/internal/db"
+)
+
+func seedViews(t *testing.T, d *db.PageViewRepo, n int) {
+	t.Helper()
+	now := time.Now().UTC()
+	for i := 0; i < n; i++ {
+		path := "/"
+		if i%2 == 0 {
+			path = "/posts"
+		}
+		if err := d.Record(&db.PageView{Path: path, Referrer: "https://ref.example", IPHash: "h", CreatedAt: now.Add(-time.Duration(i) * time.Minute)}); err != nil {
+			t.Fatalf("Record: %v", err)
+		}
+	}
+}
+
+func TestAPIAdminStatsVisitorsRequiresAuth(t *testing.T) {
+	h := newTestHandler(t)
+	if rec := apiDo(t, h, http.MethodGet, "/api/v1/admin/stats/visitors", "", nil); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", rec.Code)
+	}
+}
+
+func TestAPIAdminStatsVisitors(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	seedViews(t, db.NewPageViewRepo(d), 4)
+	h := loggedInHandler(t, d, store)
+
+	rec := apiDo(t, h, http.MethodGet, "/api/v1/admin/stats/visitors?period=7d", "", withSession)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body=%s", rec.Code, rec.Body.String())
+	}
+	got := decodeBody[struct {
+		Period       string         `json:"period"`
+		Views        int            `json:"views"`
+		DailyUniques int            `json:"daily_uniques"`
+		TopPaths     []db.PathCount `json:"top_paths"`
+		Recent       []db.PageView  `json:"recent"`
+	}](t, rec)
+	if got.Period != "7d" || got.Views != 4 {
+		t.Fatalf("stats = %+v", got)
+	}
+	if len(got.TopPaths) == 0 || got.DailyUniques != 1 {
+		t.Errorf("top paths/dailies = %+v / %d", got.TopPaths, got.DailyUniques)
+	}
+}
+
+func TestAPIAdminStatsClear(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	seedViews(t, db.NewPageViewRepo(d), 3)
+	h := loggedInHandler(t, d, store)
+
+	rec := apiDo(t, h, http.MethodDelete, "/api/v1/admin/stats/visitors", "", withSession)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204", rec.Code)
+	}
+	if n := viewCount(t, db.NewPageViewRepo(d)); n != 0 {
+		t.Errorf("views = %d after clear, want 0", n)
+	}
+}
+
+func TestAdminDashboardShowsVisitorStats(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	seedViews(t, db.NewPageViewRepo(d), 2)
+	rec := adminRequest(t, d, store, http.MethodGet, "/admin", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "Views today") {
+		t.Error("dashboard is missing the visitor cards")
+	}
+}
+
+func TestAdminDashboardShowsDisabledState(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	if err := db.NewSettingsRepo(d).Set("stats_enabled", "false"); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	if err := store.Reload(); err != nil {
+		t.Fatalf("Reload: %v", err)
+	}
+	rec := adminRequest(t, d, store, http.MethodGet, "/admin", nil)
+	if !strings.Contains(rec.Body.String(), "disabled") {
+		t.Error("dashboard does not show the disabled state")
+	}
+}

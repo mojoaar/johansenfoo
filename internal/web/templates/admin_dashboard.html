@@ -7,6 +7,30 @@
 </section>
 
 <section class="card">
+  <h2>Visitors</h2>
+  {{if .StatsEnabled}}
+  <div class="stat-grid">
+    <div class="stat"><span class="stat-value">{{.ViewsToday}}</span><span class="stat-label">Views today</span></div>
+    <div class="stat"><span class="stat-value">{{.Views7d}}</span><span class="stat-label">views 7d</span></div>
+    <div class="stat"><span class="stat-value">{{.Views30d}}</span><span class="stat-label">views 30d</span></div>
+    <div class="stat"><span class="stat-value">{{.DailyUniques}}</span><span class="stat-label">daily uniques 7d</span></div>
+  </div>
+  <div class="grid-2">
+    <div>
+      <h3>Top pages</h3>
+      <ul>{{range .TopPaths}}<li><code>{{.Path}}</code> &mdash; {{.Count}}</li>{{else}}<li>No data yet.</li>{{end}}</ul>
+    </div>
+    <div>
+      <h3>Top referrers</h3>
+      <ul>{{range .TopReferrers}}<li><code>{{.Referrer}}</code> &mdash; {{.Count}}</li>{{else}}<li>No data yet.</li>{{end}}</ul>
+    </div>
+  </div>
+  {{else}}
+  <p class="admin-note">Visitor statistics are disabled (<code>stats_enabled=false</code>). No page views are being recorded.</p>
+  {{end}}
+</section>
+
+<section class="card">
   <h2>Quick actions</h2>
   <div class="actions">
     <a href="/admin/profile"><button type="button" class="secondary">Edit profile</button></a>
@@ -18,6 +42,6 @@
 
 <section class="card">
   <h2>Published content</h2>
-  <p class="admin-note">Every change made here is live on the public site on the next page load. Visitor and runtime statistics arrive in a later phase.</p>
+  <p class="admin-note">Every change made here is live on the public site on the next page load.</p>
 </section>
 {{template "admin_foot" .}}{{end}}

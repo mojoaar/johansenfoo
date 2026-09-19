@@ -19,6 +19,7 @@ func NewServer(b Backend, version string) *server.MCPServer {
 	registerPostTools(s, b)
 	registerSettingTools(s, b)
 	registerThemeTools(s, b)
+	registerStatTools(s, b)
 	return s
 }
 

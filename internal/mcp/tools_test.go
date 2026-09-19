@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 
@@ -444,5 +445,26 @@ func TestThemeToolGetResolvesInheritance(t *testing.T) {
 	got := decode[db.Theme](t, callTool(t, b.getTheme, map[string]any{"slug": "bare-theme"}))
 	if got.TokensBase["--font-sans"] == "" {
 		t.Errorf("get_theme did not resolve inherited base tokens: %+v", got.TokensBase)
+	}
+}
+
+func TestVisitorStatsTools(t *testing.T) {
+	b, _ := testBackend(t)
+	repo := db.NewPageViewRepo(b.DB)
+	now := time.Now().UTC()
+	for i := 0; i < 3; i++ {
+		if err := repo.Record(&db.PageView{Path: "/", IPHash: "h", CreatedAt: now.Add(-time.Duration(i) * time.Minute)}); err != nil {
+			t.Fatalf("Record: %v", err)
+		}
+	}
+
+	got := decode[map[string]any](t, callTool(t, b.getVisitorStats, map[string]any{"period": "7d"}))
+	if got["views"].(float64) != 3 {
+		t.Fatalf("views = %v, want 3", got["views"])
+	}
+
+	callTool(t, b.clearVisitorStats, nil)
+	if n, _ := repo.CountSince("2000-01-01T00:00:00Z"); n != 0 {
+		t.Errorf("views = %d after clear, want 0", n)
 	}
 }

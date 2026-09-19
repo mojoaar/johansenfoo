@@ -57,6 +57,14 @@ type page struct {
 	Themes         []db.Theme
 	Theme          db.Theme
 	ActiveTheme    string
+	StatsEnabled   bool
+	ViewsToday     int
+	Views7d        int
+	Views30d       int
+	DailyUniques   int
+	TopPaths       []db.PathCount
+	TopReferrers   []db.ReferrerCount
+	RecentHits     []db.PageView
 }
 
 var templates = template.Must(

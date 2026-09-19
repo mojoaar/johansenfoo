@@ -131,8 +131,8 @@ func TestMCPUnauthenticatedTrafficRateLimited(t *testing.T) {
 func TestMCPToolInventoryAndSchemas(t *testing.T) {
 	s := NewServer(Backend{}, "test")
 	tools := s.ListTools()
-	if len(tools) != 35 {
-		t.Fatalf("tools = %d, want 35", len(tools))
+	if len(tools) != 37 {
+		t.Fatalf("tools = %d, want 37", len(tools))
 	}
 	seo, ok := tools["update_seo_settings"]
 	if !ok {

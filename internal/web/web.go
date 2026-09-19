@@ -108,6 +108,8 @@ func New(d Deps) http.Handler {
 			apiAdmin.Put("/themes/{id}", apiAdminThemesUpdateHandler(d))
 			apiAdmin.Delete("/themes/{id}", apiAdminThemesDeleteHandler(d))
 			apiAdmin.Post("/themes/{id}/activate", apiAdminThemesActivateHandler(d))
+			apiAdmin.Get("/stats/visitors", apiAdminStatsVisitorsHandler(d))
+			apiAdmin.Delete("/stats/visitors", apiAdminStatsClearHandler(d))
 			apiAdmin.Get("/export", apiAdminExportHandler(d))
 			apiAdmin.Post("/import", apiAdminImportHandler(d))
 		})

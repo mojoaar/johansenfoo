@@ -147,3 +147,80 @@ func startStatsPruner(d *sql.DB, interval time.Duration) (stop func()) {
 	}()
 	return ticker.Stop
 }
+
+type visitorStats struct {
+	Period       string             `json:"period"`
+	Views        int                `json:"views"`
+	DailyUniques int                `json:"daily_uniques"`
+	TopPaths     []db.PathCount     `json:"top_paths"`
+	TopReferrers []db.ReferrerCount `json:"top_referrers"`
+	Recent       []db.PageView      `json:"recent"`
+}
+
+func periodDays(period string) int {
+	switch period {
+	case "today", "1d":
+		return 1
+	case "30d":
+		return 30
+	default:
+		return 7
+	}
+}
+
+func periodStart(days int) time.Time {
+	now := time.Now().UTC()
+	midnight := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	return midnight.AddDate(0, 0, -(days - 1))
+}
+
+func dailyUniqueSum(d *sql.DB, days int) int {
+	repo := db.NewPageViewRepo(d)
+	total := 0
+	for i := 0; i < days; i++ {
+		day := periodStart(days).AddDate(0, 0, i).Format("2006-01-02")
+		n, err := repo.DailyUniqueCount(day)
+		if err == nil {
+			total += n
+		}
+	}
+	return total
+}
+
+func collectVisitors(d Deps, period string) (visitorStats, error) {
+	days := periodDays(period)
+	since := periodStart(days).Format(time.RFC3339)
+	repo := db.NewPageViewRepo(d.DB)
+	views, err := repo.CountSince(since)
+	if err != nil {
+		return visitorStats{}, err
+	}
+	paths, err := repo.TopPaths(since, 5)
+	if err != nil {
+		return visitorStats{}, err
+	}
+	refs, err := repo.TopReferrers(since, 5)
+	if err != nil {
+		return visitorStats{}, err
+	}
+	recent, err := repo.Recent(10)
+	if err != nil {
+		return visitorStats{}, err
+	}
+	return visitorStats{
+		Period:       period,
+		Views:        views,
+		DailyUniques: dailyUniqueSum(d.DB, days),
+		TopPaths:     paths,
+		TopReferrers: refs,
+		Recent:       recent,
+	}, nil
+}
+
+func countSinceDays(d Deps, days int) int {
+	n, err := db.NewPageViewRepo(d.DB).CountSince(periodStart(days).Format(time.RFC3339))
+	if err != nil {
+		return 0
+	}
+	return n
+}

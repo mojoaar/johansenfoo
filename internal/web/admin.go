@@ -16,6 +16,18 @@ func adminDashboardHandler(d Deps) http.HandlerFunc {
 		data.Experience = c.Experience
 		data.Skills = c.Skills
 		data.ThemeSlug = c.Theme.Slug
+		data.StatsEnabled = c.Settings["stats_enabled"] != "false"
+		data.ViewsToday = countSinceDays(d, 1)
+		data.Views7d = countSinceDays(d, 7)
+		data.Views30d = countSinceDays(d, 30)
+		if data.StatsEnabled {
+			if stats, err := collectVisitors(d, "7d"); err == nil {
+				data.DailyUniques = stats.DailyUniques
+				data.TopPaths = stats.TopPaths
+				data.TopReferrers = stats.TopReferrers
+				data.RecentHits = stats.Recent
+			}
+		}
 		renderAdmin(w, r, "admin_dashboard", data)
 	}
 }
