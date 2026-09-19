@@ -24,6 +24,15 @@ var requiredTokens = []string{
 
 var optionalTokens = []string{
 	"--radius", "--font-mono", "--font-sans",
+	"--card", "--card-foreground", "--popover", "--popover-foreground",
+	"--primary", "--primary-foreground", "--secondary", "--secondary-foreground",
+	"--muted", "--muted-foreground", "--accent-foreground",
+	"--destructive", "--destructive-foreground", "--input", "--ring",
+	"--font-size-base", "--line-height", "--letter-spacing",
+	"--font-weight-normal", "--font-weight-bold",
+	"--border-width", "--shadow-sm", "--shadow-lg",
+	"--code-bg", "--code-text", "--code-keyword", "--code-string",
+	"--code-comment", "--code-function", "--code-number", "--code-operator",
 }
 
 func known() map[string]bool {
@@ -49,7 +58,7 @@ func Validate(t Theme) error {
 			if !knownTokens[name] {
 				return fmt.Errorf("theme %q: unknown token %q in %s", t.Slug, name, section.label)
 			}
-			if strings.ContainsAny(value, "{};") {
+			if strings.ContainsAny(value, "{};<>") {
 				return fmt.Errorf("theme %q: token %q in %s contains a CSS-breaking character", t.Slug, name, section.label)
 			}
 		}

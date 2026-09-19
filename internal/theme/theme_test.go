@@ -132,3 +132,29 @@ func TestCSSScopesByThemeAndMode(t *testing.T) {
 		t.Error("--radius should be emitted once, in the base block")
 	}
 }
+
+func TestValidateAcceptsWidenedVocabulary(t *testing.T) {
+	th := Johansen()
+	for _, tok := range []string{
+		"--card", "--primary", "--muted-foreground", "--destructive", "--ring",
+		"--font-size-base", "--line-height", "--letter-spacing", "--font-weight-bold",
+		"--radius", "--border-width", "--shadow-sm", "--shadow-lg",
+		"--code-bg", "--code-keyword", "--code-string", "--code-comment",
+	} {
+		th.Light[tok] = "value"
+		th.Dark[tok] = "value"
+	}
+	if err := Validate(th); err != nil {
+		t.Errorf("Validate rejected widened vocabulary: %v", err)
+	}
+}
+
+func TestValidateRejectsBreakingValues(t *testing.T) {
+	for _, bad := range []string{"</style>", "a<b", "a>b", "a;b", "a{b", "a}b"} {
+		th := Johansen()
+		th.Dark["--accent"] = bad
+		if err := Validate(th); err == nil {
+			t.Errorf("Validate accepted breaking value %q", bad)
+		}
+	}
+}
