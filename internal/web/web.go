@@ -178,6 +178,7 @@ func New(d Deps) http.Handler {
 		ar.Post("/seo/pages/{id}/delete", adminSeoPageDeleteHandler(d))
 		ar.Delete("/seo/pages/{id}/delete", adminSeoPageDeleteHandler(d))
 		ar.Post("/stats", adminStatsPostHandler(d))
+		ar.Get("/runtime", adminRuntimeHandler(d))
 		ar.Get("/themes", adminThemesGetHandler(d))
 		ar.Get("/themes/new", adminThemeNewHandler(d))
 		ar.Post("/themes", adminThemeCreateHandler(d))

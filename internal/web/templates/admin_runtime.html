@@ -1,0 +1,18 @@
+{{define "admin_runtime"}}
+<div class="stat-grid">
+  <div class="stat"><span class="stat-value">{{.Runtime.Goroutines}}</span><span class="stat-label">Goroutines</span></div>
+  <div class="stat"><span class="stat-value">{{.Runtime.UptimeSeconds}}s</span><span class="stat-label">uptime</span></div>
+  <div class="stat"><span class="stat-value">{{.Runtime.HeapAlloc}}</span><span class="stat-label">heap alloc</span></div>
+  <div class="stat"><span class="stat-value">{{.Runtime.GCCount}}</span><span class="stat-label">GC runs</span></div>
+</div>
+{{if .Runtime.Available}}
+<div class="stat-grid">
+  <div class="stat"><span class="stat-value">{{printf "%.1f" .Runtime.CPUPercent}}%</span><span class="stat-label">cpu</span></div>
+  <div class="stat"><span class="stat-value">{{.Runtime.MemUsed}}</span><span class="stat-label">memory used</span></div>
+  <div class="stat"><span class="stat-value">{{.Runtime.MemLimit}}</span><span class="stat-label">memory limit</span></div>
+  <div class="stat"><span class="stat-value">{{.Runtime.DiskUsed}}</span><span class="stat-label">disk used</span></div>
+</div>
+{{else}}
+<p class="admin-note">Container CPU/memory/disk stats are unavailable on this platform.</p>
+{{end}}
+{{end}}

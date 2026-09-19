@@ -32,6 +32,11 @@
   {{end}}
 </section>
 
+<section class="card" id="runtime-panel" hx-get="/admin/runtime" hx-trigger="load, every 5s" hx-swap="innerHTML">
+  <h2>Runtime</h2>
+  <p class="admin-note">Loading&hellip;</p>
+</section>
+
 <section class="card">
   <h2>Stats settings</h2>
   <form method="post" action="/admin/stats">

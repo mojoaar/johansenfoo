@@ -140,11 +140,9 @@ snake_case and errors are returned as MCP tool errors.
   SEO         get_seo_settings, update_seo_settings
   Themes      list_themes, get_theme, create_theme, update_theme, delete_theme,
               set_active_theme, import_theme
-  Stats       get_visitor_stats, clear_visitor_stats
+  Stats       get_visitor_stats, clear_visitor_stats, get_system_stats
   Content     export_content, import_content
 ```
-
-Runtime stats (Prometheus/container) and the `get_system_stats` tool are Phase 7b.
 
 ## Themes
 
@@ -176,6 +174,16 @@ The admin dashboard shows views today/7d/30d, daily uniques, top pages, top refe
 hits. A daily job prunes rows older than `stats_retention_days` (default 90), and `stats_enabled`
 turns collection off entirely. `GET|DELETE /api/v1/admin/stats/visitors` and the `get_visitor_stats`
 / `clear_visitor_stats` MCP tools expose the same data.
+
+## Runtime stats
+
+`GET /metrics` serves Prometheus text (Go runtime and process collectors). The admin dashboard shows
+a runtime panel that HTMX polls from `/admin/runtime` every five seconds: goroutines, uptime, heap
+allocation, GC runs, and — on Linux containers — container CPU percentage, memory used against its
+limit, and disk used against total. The same figures are available as JSON at
+`GET /api/v1/admin/stats/system` and through the `get_system_stats` MCP tool. Container figures are
+read from cgroup v2 with a `/proc` fallback and `syscall.Statfs`; off Linux they report as
+unavailable rather than erroring.
 
 ## Build and run
 

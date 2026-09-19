@@ -17,6 +17,8 @@ CGO_ENABLED=0 go run ./cmd/johansenfoo -data=/tmp/jf   # run against a scratch d
 - Module `github.com/mojoaar/johansenfoo`, Go 1.25.5, must build and test with `CGO_ENABLED=0`.
 - No third-party origin on the runtime critical path other than the Umami snippet. HTMX is vendored
   at `/static/htmx.min.js`; no CDN scripts or fonts.
+- Runtime stats read cgroup v2 with a /proc fallback and `syscall.Statfs`; off Linux every
+  container field reports unavailable rather than erroring.
 - Migrations are append-only: `0001`-`0008` stay byte-identical. Add the next free number (`0009`)
   only when required.
 - All timestamps are RFC 3339 UTC via `strftime('%Y-%m-%dT%H:%M:%SZ','now')`, never `datetime('now')`.
@@ -43,6 +45,7 @@ internal/db/seed_themes.go  insert-if-missing theme library seeding
 internal/db/repo_views.go   page_view recording, aggregation and pruning
 internal/db/backup.go       whole-content export/import snapshot (includes posts/tags/pages)
 internal/markdown/          goldmark + GFM + Chroma class-based highlighting
+internal/sysinfo/           cgroup/proc/Statfs runtime stats (unavailable off Linux)
 internal/mcp/               MCP server: backend, auth, tools (content, posts, settings, themes)
 internal/theme/             token vocabulary, validation, CSS emission, seed library
 internal/icons/             vendored SVGs, exposed to templates as inline SVG
@@ -73,7 +76,8 @@ internal/web/admin_seo.go   admin SEO settings and page overrides
 internal/web/api_admin_seo.go  SEO settings REST handlers
 internal/web/admin_themes.go   admin theme list, token editor and set-active
 internal/web/api_admin_themes.go  theme CRUD REST handlers
-internal/web/api_admin_stats.go  visitor stats REST handlers
+internal/web/api_admin_stats.go  visitor stats and system stats REST handlers
+internal/web/runtime.go     /metrics, runtime snapshot and the /admin/runtime partial
 internal/web/admin.go       admin shell and dashboard
 internal/web/admin_profile.go   profile and social-link handlers
 internal/web/admin_projects.go  project CRUD handlers
@@ -121,6 +125,7 @@ variants are reachable via the `_method` override):
   GET  /admin/seo              POST|PUT /admin/seo
                                POST /admin/seo/pages
                                POST|DELETE /admin/seo/pages/{id}/delete
+  GET  /admin/runtime          HTMX-polled runtime fragment
   GET  /admin/themes           POST /admin/themes
   GET  /admin/themes/new
   GET  /admin/themes/{id}      POST|PUT /admin/themes/{id}
@@ -145,7 +150,7 @@ API routes:
     GET|PUT      /api/v1/admin/settings/seo
     GET|POST     /api/v1/admin/themes            GET|PUT|DELETE /api/v1/admin/themes/{id}
     POST         /api/v1/admin/themes/{id}/activate
-    GET|DELETE   /api/v1/admin/stats/visitors
+    GET|DELETE   /api/v1/admin/stats/visitors   GET /api/v1/admin/stats/system
     GET          /api/v1/admin/export            POST /api/v1/admin/import
 ```
 

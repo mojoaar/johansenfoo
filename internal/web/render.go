@@ -58,6 +58,7 @@ type page struct {
 	Theme          db.Theme
 	ActiveTheme    string
 	StatsEnabled   bool
+	Runtime        RuntimeStats
 	ViewsToday     int
 	Views7d        int
 	Views30d       int

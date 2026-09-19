@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Runtime stats: Prometheus `/metrics`, a dashboard runtime panel polled over HTMX, `GET /api/v1/admin/stats/system` and the `get_system_stats` MCP tool; container CPU/memory/disk read from cgroup v2 with a `/proc` and `Statfs` fallback (unavailable off Linux).
 - Visitor stats: privacy-preserving page-view recording (daily-rotating salted IP hash, no cookies),
   a daily retention job, dashboard visitor cards, `GET|DELETE /api/v1/admin/stats/visitors`, and the
   `get_visitor_stats` / `clear_visitor_stats` MCP tools.
@@ -16,9 +17,9 @@ All notable changes to this project are documented here. The format follows
 - Themes: a widened token vocabulary (colour pairs, typography, shape/depth, code tokens), hardened
   validation that rejects CSS/HTML-breaking values, full theme CRUD with guard rails, an admin
   token editor at `/admin/themes`, and `GET|POST|GET|PUT|DELETE /api/v1/admin/themes` plus activate.
-- MCP server at `/mcp` (streamable HTTP) with API-key auth and a 100 req/min per-IP limit, and 37
+- MCP server at `/mcp` (streamable HTTP) with API-key auth and a 100 req/min per-IP limit, and 38
   tools covering profile, projects, experience, skills, posts, tags, the posts kill switch, SEO
-  settings, themes, visitor stats, and content export/import.
+  settings, themes, visitor and system stats, and content export/import.
 - SEO: metadata resolved with per-page (`page_seo`) and per-post overrides over admin-editable
   global defaults; title template, Twitter site, three-source `noindex`, and `BlogPosting`
   structured data on every published post.

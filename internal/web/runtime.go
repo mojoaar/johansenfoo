@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bytes"
 	"net/http"
 	"path/filepath"
 	"runtime"
@@ -56,4 +57,22 @@ func metricsHandler() http.Handler {
 	registry.MustRegister(prometheus.NewGoCollector())
 	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 	return promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
+}
+
+func renderFragment(w http.ResponseWriter, name string, data page) {
+	var buf bytes.Buffer
+	if err := templates.ExecuteTemplate(&buf, name, data); err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = w.Write(buf.Bytes())
+}
+
+func adminRuntimeHandler(d Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data := NewAdminPage(d, r, "dashboard", "Runtime")
+		data.Runtime = collectRuntime(d)
+		renderFragment(w, "admin_runtime", data)
+	}
 }

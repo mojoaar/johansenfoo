@@ -46,3 +46,36 @@ func TestCollectRuntime(t *testing.T) {
 		t.Errorf("uptime = %d, want >= 0", got.UptimeSeconds)
 	}
 }
+
+func TestAdminRuntimePartial(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	rec := adminRequest(t, d, store, http.MethodGet, "/admin/runtime", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Goroutines") {
+		t.Error("partial is missing the goroutines card")
+	}
+	if strings.Contains(body, "<html") {
+		t.Error("partial returned a full page, not a fragment")
+	}
+}
+
+func TestAdminRuntimeRequiresAuth(t *testing.T) {
+	h := newTestHandler(t)
+	rec := apiDo(t, h, http.MethodGet, "/admin/runtime", "", nil)
+	if rec.Code == http.StatusOK {
+		t.Fatalf("status = %d, want a redirect/unauthorized", rec.Code)
+	}
+}
+
+func TestDashboardPollsRuntime(t *testing.T) {
+	d := newTestDB(t)
+	store, _ := NewContentStore(d)
+	rec := adminRequest(t, d, store, http.MethodGet, "/admin", nil)
+	if !strings.Contains(rec.Body.String(), `hx-get="/admin/runtime"`) {
+		t.Error("dashboard does not poll the runtime partial")
+	}
+}
